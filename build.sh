@@ -124,8 +124,8 @@ chroot $DEST/output/sdcard /bin/bash -c "export LANG=en_US.UTF-8"
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -q -y install openssh-server module-init-tools dhcp3-client udev ifupdown iproute dropbear iputils-ping ntpdate usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -q -y upgrade"
 
-# set password
-chroot $DEST/output/sdcard /bin/bash -c "passwd" 
+# set password to 1234
+chroot $DEST/output/sdcard /bin/bash -c "(echo 1234;echo 1234;) | passwd root" 
 
 # set hostname 
 echo cubie > $DEST/output/sdcard/etc/hostname
