@@ -165,6 +165,14 @@ wget https://www.dropbox.com/s/o3evaiuidtg6xb5/ap6210.zip
 unzip ap6210.zip
 rm ap6210.zip
 cd $DEST/
+
+# sunxi tools 
+cd $DEST/output/sdcard/usr/sbin
+wget https://www.dropbox.com/s/ns4h1ddmta1h6i9/tools-arm-bin.zip
+unzip tools-arm-bin.zip
+rm tools-arm-bin.zip
+cd $DEST/
+
 # cleanup 
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
