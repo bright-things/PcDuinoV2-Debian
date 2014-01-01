@@ -11,7 +11,7 @@ sleep 3
 # Downloading necessary files
 #--------------------------------------------------------------------------------
 
-sudo apt-get -q -y install binfmt-support bison build-essential ccache debootstrap flex gawk gcc-arm-linux-gnueabi gcc-arm-linux-gnueabihf gettext git linux-headers-generic linux-image-generic lvm2 qemu-user-static texinfo texlive u-boot-tools uuid-dev zlib1g-dev unzip libncurses5-dev pkg-config libusb-1.0-0-dev
+sudo apt-get -qq -y install binfmt-support bison build-essential ccache debootstrap flex gawk gcc-arm-linux-gnueabi gcc-arm-linux-gnueabihf gettext git linux-headers-generic linux-image-generic lvm2 qemu-user-static texinfo texlive u-boot-tools uuid-dev zlib1g-dev unzip libncurses5-dev pkg-config libusb-1.0-0-dev
 
 #--------------------------------------------------------------------------------
 # Preparing output / destination files
@@ -133,11 +133,11 @@ chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
 # and startable on boot
 chroot $DEST/output/sdcard /bin/bash -c "update-rc.d cubian-firstrun defaults" 
 # install and configure locales
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -q -y install locales"
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install locales"
 chroot $DEST/output/sdcard /bin/bash -c "dpkg-reconfigure locales"
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=en_US.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -q -y install openssh-server module-init-tools dhcp3-client udev ifupdown iproute dropbear iputils-ping ntpdate usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted" 
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -q -y upgrade"
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install openssh-server module-init-tools dhcp3-client udev ifupdown iproute dropbear iputils-ping ntpdate usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted" 
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
 
 # set password to 1234
 chroot $DEST/output/sdcard /bin/bash -c "(echo 1234;echo 1234;) | passwd root" 
