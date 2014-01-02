@@ -1,75 +1,117 @@
 #!/bin/bash
 
+# --- Configuration -------------------------------------------------------------
+VERSION="CTDebian 1.3"
+DEST_LANG="en_US"
+DEST_LANGUAGE="en"
 DEST=/tmp/Cubie
-
-
-echo "Building Cubietruck-Debian in $DEST"
-sleep 3
+DISPLAY=3  # "0:none; 1:lcd; 2:tv; 3:hdmi; 4:vga"
+# --- End -----------------------------------------------------------------------
+SRC=$(pwd)
+set -e
 
 #Requires root ..
+if [ "$UID" -ne 0 ]
+  then echo "Please run as root"
+  exit
+fi
+echo "Building Cubietruck-Debian in $DEST from $SRC"
+sleep 3
 #--------------------------------------------------------------------------------
 # Downloading necessary files
 #--------------------------------------------------------------------------------
-
-sudo apt-get -qq -y install binfmt-support bison build-essential ccache debootstrap flex gawk gcc-arm-linux-gnueabi gcc-arm-linux-gnueabihf gettext git linux-headers-generic linux-image-generic lvm2 qemu-user-static texinfo texlive u-boot-tools uuid-dev zlib1g-dev unzip libncurses5-dev pkg-config libusb-1.0-0-dev
+echo "------ Downloading necessary files"
+apt-get -qq -y install binfmt-support bison build-essential ccache debootstrap flex gawk gcc-arm-linux-gnueabi gcc-arm-linux-gnueabihf gettext git linux-headers-generic linux-image-generic lvm2 qemu-user-static texinfo texlive u-boot-tools uuid-dev zlib1g-dev unzip libncurses5-dev pkg-config libusb-1.0-0-dev
 
 #--------------------------------------------------------------------------------
 # Preparing output / destination files
 #--------------------------------------------------------------------------------
 
+echo "------ Fetching files from github"
 mkdir -p $DEST/output
 cp output/uEnv.txt $DEST/output
 
-git clone https://github.com/cubieboard/u-boot-sunxi $DEST/u-boot-sunxi # Boot loader
-git clone https://github.com/linux-sunxi/sunxi-tools.git $DEST/sunxi-tools # Allwinner tools
-git clone https://github.com/cubieboard/cubie_configs $DEST/cubie_configs # Hardware configurations
-git clone https://github.com/cubieboard/linux-sunxi/ $DEST/linux-sunxi # Kernel 3.4.61+
+if [ -d "$DEST/u-boot-sunxi" ]
+then
+	cd $DEST/u-boot-sunxi ; git pull; cd $SRC
+else
+	git clone https://github.com/cubieboard/u-boot-sunxi $DEST/u-boot-sunxi # Boot loader
+fi
+if [ -d "$DEST/sunxi-tools" ]
+then
+	cd $DEST/sunxi-tools; git pull; cd $SRC
+else
+	git clone https://github.com/linux-sunxi/sunxi-tools.git $DEST/sunxi-tools # Allwinner tools
+fi
+if [ -d "$DEST/cubie_configs" ]
+then
+	cd $DEST/cubie_configs; git pull; cd $SRC
+else
+	git clone https://github.com/cubieboard/cubie_configs $DEST/cubie_configs # Hardware configurations
+fi
+if [ -d "$DEST/linux-sunxi" ]
+then
+	cd $DEST/linux-sunxi; git pull -f; cd $SRC
+else
+	git clone https://github.com/cubieboard/linux-sunxi/ $DEST/linux-sunxi # Kernel 3.4.61+
+fi
 
 # Applying Patch for 2gb memory
-patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < patch/memory.patch
+patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < patch/memory.patch || true
 
 #Change Video output ( TODO add a param so the user can choose that ?)
-sed -e 's/output_type = 3/output_type = 4/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/cubietruck-vga.fex
+sed -e 's/output_type = [0-9]*/output_type = '$DISPLAY'/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/cubietruck-vga.fex
 
-
+# Copying Kernel config
+cp $SRC/config/kernel.config $DEST/linux-sunxi/
 
 #--------------------------------------------------------------------------------
 # Compiling everything
 #--------------------------------------------------------------------------------
-
+#if false; then
+echo "------ Compiling kernel boot loaderb"
 cd $DEST/u-boot-sunxi
 # boot loader
-make -j2 'cubietruck' CROSS_COMPILE=arm-linux-gnueabihf-
-cd ..
-cd sunxi-tools
+make clean && make -j2 'cubietruck' CROSS_COMPILE=arm-linux-gnueabihf-
+echo "------ Compiling sunxi tools"
+cd $DEST/sunxi-tools
 # sunxi-tools
-make fex2bin
+make clean && make fex2bin
 cp fex2bin /usr/bin/
-cd ..
 # hardware configuration
 fex2bin $DEST/cubie_configs/sysconfig/linux/cubietruck-vga.fex $DEST/output/script.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/cubietruck.fex $DEST/output/script-hdmi.bin
-cd linux-sunxi
+
 # kernel image
+echo "------ Compiling kernel"
+cd $DEST/linux-sunxi
+make clean
 make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
 # get proven config
-wget https://www.dropbox.com/s/jvccoerm8mka7e8/config -O .config
+cp $DEST/linux-sunxi/kernel.config $DEST/linux-sunxi/.config
 make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage modules
 make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
+#fi
 
 #--------------------------------------------------------------------------------
 # Creating SD Images
 #--------------------------------------------------------------------------------
+echo "------ Creating SD Images"
 cd $DEST/output
 # create 1Gb image and mount image to /dev/loop0
 dd if=/dev/zero of=debian_rootfs.raw bs=1M count=1000
+umount -l /dev/loop0 || true
+umount -l /dev/loop1 || true
+losetup -d /dev/loop0 || true
+losetup -d /dev/loop1 || true
 losetup /dev/loop0 debian_rootfs.raw 
 
+echo "------ Partitionning and mounting filesystem"
 # make image bootable
 dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=/dev/loop0 bs=1024 seek=8
 
 # create one partition starting at 2048 which is default
-(echo n; echo p; echo 1; echo; echo; echo w) | fdisk /dev/loop0 >> /dev/null
+(echo n; echo p; echo 1; echo; echo; echo w) | fdisk /dev/loop0 >> /dev/null || true
 # just to make sure
 partprobe
 
@@ -81,12 +123,20 @@ mkfs.ext4 /dev/loop1
 mkdir -p $DEST/output/sdcard/
 mount /dev/loop1 $DEST/output/sdcard/
 
+
+
+echo "------ Install basic filesystem"
 # install base system
 debootstrap --no-check-gpg --arch=armhf --foreign wheezy $DEST/output/sdcard/
 # we need this
 cp /usr/bin/qemu-arm-static $DEST/output/sdcard/usr/bin/
 # second stage
 chroot $DEST/output/sdcard /bin/bash -c "/debootstrap/debootstrap --second-stage"
+
+# update /etc/issue
+cat <<EOT > $DEST/output/sdcard/etc/issue
+Debian GNU/Linux 7 $VERSION \n \l
+EOT
 
 # apt list
 cat <<EOT > $DEST/output/sdcard/etc/apt/sources.list
@@ -125,8 +175,8 @@ chroot $DEST/output/sdcard /bin/bash -c "update-rc.d disable_led.sh defaults"
 
 # scripts for autoresize at first boot from cubian
 cd $DEST/output/sdcard/etc/init.d
-wget https://www.dropbox.com/s/jytplpmc80nvc3q/cubian-firstrun
-wget https://www.dropbox.com/s/pwlsua9xran60ji/cubian-resize2fs
+cp $SRC/scripts/cubian-resize2fs $DEST/output/sdcard/etc/init.d
+cp $SRC/scripts/cubian-firstrun $DEST/output/sdcard/etc/init.d
 
 # make it executable
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
@@ -134,10 +184,16 @@ chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
 chroot $DEST/output/sdcard /bin/bash -c "update-rc.d cubian-firstrun defaults" 
 # install and configure locales
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install locales"
-chroot $DEST/output/sdcard /bin/bash -c "dpkg-reconfigure locales"
-chroot $DEST/output/sdcard /bin/bash -c "export LANG=en_US.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install openssh-server module-init-tools dhcp3-client udev ifupdown iproute dropbear iputils-ping ntpdate usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted" 
+#chroot $DEST/output/sdcard /bin/bash -c "dpkg-reconfigure locales"
+chroot $DEST/output/sdcard /bin/bash -c "locale-gen --purge $DEST_LANG.UTF-8"
+echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
+chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install openssh-server module-init-tools dhcp3-client udev ifupdown iproute dropbear iputils-ping ntpdate usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufreqd cpufrequtils console-setup" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
+
+# configure MIN / MAX Speed for cpufrequtils
+sed -e 's/MIN_SPEED="0"/MIN_SPEED="30000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
+sed -e 's/MAX_SPEED="0"/MAX_SPEED="100000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 
 # set password to 1234
 chroot $DEST/output/sdcard /bin/bash -c "(echo 1234;echo 1234;) | passwd root" 
@@ -182,11 +238,16 @@ rm ap6210.zip
 cd $DEST/
 
 # sunxi tools 
-cd $DEST/output/sdcard/usr/sbin
-wget https://www.dropbox.com/s/ns4h1ddmta1h6i9/tools-arm-bin.zip
-unzip tools-arm-bin.zip
-rm tools-arm-bin.zip
-cd $DEST/
+#cd $DEST/output/sdcard/usr/sbin
+#wget https://www.dropbox.com/s/ns4h1ddmta1h6i9/tools-arm-bin.zip
+#unzip tools-arm-bin.zip
+#rm tools-arm-bin.zip
+#cd $DEST/
+# sunxi-tools
+cd $DEST/sunxi-tools
+make clean && make -j2 'fex2bin' CROSS_COMPILE=arm-linux-gnueabihf- && make -j2 'bin2fex' CROSS_COMPILE=arm-linux-gnueabihf- 
+cp fex2bin $DEST/output/sdcard/usr/bin/ 
+cp bin2fex $DEST/output/sdcard/usr/bin/
 
 # cleanup 
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
