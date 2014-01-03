@@ -247,7 +247,7 @@ cd $DEST/
 #cd $DEST/
 # sunxi-tools
 cd $DEST/sunxi-tools
-make clean && make -j2 'fex2bin' CROSS_COMPILE=arm-linux-gnueabihf- && make -j2 'bin2fex' CROSS_COMPILE=arm-linux-gnueabihf- 
+make clean && make -j2 'fex2bin' CC=arm-linux-gnueabihf-gcc && make -j2 'bin2fex' CC=arm-linux-gnueabihf-gcc
 cp fex2bin $DEST/output/sdcard/usr/bin/ 
 cp bin2fex $DEST/output/sdcard/usr/bin/
 
