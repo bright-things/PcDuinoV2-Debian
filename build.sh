@@ -186,8 +186,9 @@ chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
 chroot $DEST/output/sdcard /bin/bash -c "update-rc.d cubian-firstrun defaults" 
 # install and configure locales
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install locales"
-#chroot $DEST/output/sdcard /bin/bash -c "dpkg-reconfigure locales"
-chroot $DEST/output/sdcard /bin/bash -c "locale-gen --purge $DEST_LANG.UTF-8"
+# reconfigure locales
+echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen 
+chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
 echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute dropbear iputils-ping ntpdate usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufreqd cpufrequtils console-setup unzip bridge-utils" 
