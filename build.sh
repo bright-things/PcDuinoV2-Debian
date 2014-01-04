@@ -161,14 +161,7 @@ APT::Install-Suggests "0";
 END
 
 # script to turn off the LED blinking
-cat <<EOT > $DEST/output/sdcard/etc/init.d/disable_led.sh 
-#
-# Turn off bright flashing LEDs!!
-echo 0 > /sys/class/leds/blue:ph21:led1/brightness  
-echo 0 > /sys/class/leds/orange:ph20:led2/brightness
-echo 0 > /sys/class/leds/white:ph11:led3/brightness
-echo 0 > /sys/class/leds/green:ph07:led4/brightness
-EOT
+cp $SRC/scripts/disable_led.sh $DEST/output/sdcard/etc/init.d/disable_led.sh
 
 # make it executable
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/disable_led.sh"
