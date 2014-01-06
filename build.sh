@@ -242,9 +242,10 @@ cd $DEST/
 #cd $DEST/
 # sunxi-tools
 cd $DEST/sunxi-tools
-make clean && make -j2 'fex2bin' CC=arm-linux-gnueabihf-gcc && make -j2 'bin2fex' CC=arm-linux-gnueabihf-gcc
+make clean && make -j2 'fex2bin' CC=arm-linux-gnueabihf-gcc && make -j2 'bin2fex' CC=arm-linux-gnueabihf-gcc && make -j2 'nand-part' CC=arm-linux-gnueabihf-gcc
 cp fex2bin $DEST/output/sdcard/usr/bin/ 
 cp bin2fex $DEST/output/sdcard/usr/bin/
+cp nand-part $DEST/output/sdcard/usr/bin/
 
 # cleanup 
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
