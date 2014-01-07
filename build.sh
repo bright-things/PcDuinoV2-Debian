@@ -93,6 +93,7 @@ make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
 cp $DEST/linux-sunxi/kernel.config $DEST/linux-sunxi/.config
 make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage modules
 make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
+make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HDR_PATH=output headers_install
 #fi
 
 #--------------------------------------------------------------------------------
