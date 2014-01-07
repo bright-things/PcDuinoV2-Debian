@@ -62,7 +62,7 @@ patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < patch/memory.patch 
 patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < patch/gpio.patch || true
 
 #Change Video output ( TODO add a param so the user can choose that ?)
-sed -e 's/output_type = [0-9]*/output_type = '$DISPLAY'/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/cubietruck-vga.fex
+sed -e 's/screen0_output_type.*/screen0_output_type     = '$DISPLAY'/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/cubietruck-vga.fex
 
 # Copying Kernel config
 cp $SRC/config/kernel.config $DEST/linux-sunxi/
