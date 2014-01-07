@@ -126,6 +126,13 @@ mkfs.ext4 /dev/loop1
 mkdir -p $DEST/output/sdcard/
 mount /dev/loop1 $DEST/output/sdcard/
 
+# mount proc, sys and dev
+mount -t proc chproc $DEST/output/sdcard/proc
+mount -t sysfs chsys $DEST/output/sdcard/sys
+# This works on half the systems I tried.  Else use bind option
+mount -t devtmpfs chdev $DEST/output/sdcard/dev || mount --bind /dev $DEST/output/sdcard/dev
+mount -t devpts chpts $DEST/output/sdcard/dev/pts
+
 
 
 echo "------ Install basic filesystem"
