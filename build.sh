@@ -101,30 +101,28 @@ make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HDR_PATH=output hea
 #--------------------------------------------------------------------------------
 echo "------ Creating SD Images"
 cd $DEST/output
-# create 1Gb image and mount image to /dev/loop0
+# create 1Gb image and mount image to next free loop device
 dd if=/dev/zero of=debian_rootfs.raw bs=1M count=1000
-umount -l /dev/loop0 || true
-umount -l /dev/loop1 || true
-losetup -d /dev/loop0 || true
-losetup -d /dev/loop1 || true
-losetup /dev/loop0 debian_rootfs.raw 
+LOOP0=$(losetup -f)
+losetup $LOOP0 debian_rootfs.raw 
 
 echo "------ Partitionning and mounting filesystem"
 # make image bootable
-dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=/dev/loop0 bs=1024 seek=8
+dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=$LOOP0 bs=1024 seek=8
 
 # create one partition starting at 2048 which is default
-(echo n; echo p; echo 1; echo; echo; echo w) | fdisk /dev/loop0 >> /dev/null || true
+(echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP0 >> /dev/null || true
 # just to make sure
 partprobe
 
+LOOP1=$(losetup -f)
 # 2048 (start) x 512 (block size) = where to mount partition
-losetup -o 1048576 /dev/loop1  /dev/loop0
+losetup -o 1048576 $LOOP1 $LOOP0 
 # create filesystem
-mkfs.ext4 /dev/loop1
+mkfs.ext4 $LOOP1
 # create mount point and mount image 
 mkdir -p $DEST/output/sdcard/
-mount /dev/loop1 $DEST/output/sdcard/
+mount $LOOP1 $DEST/output/sdcard/
 
 
 
@@ -252,7 +250,7 @@ cp nand-part $DEST/output/sdcard/usr/bin/
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
 umount $DEST/output/sdcard/ 
-losetup -d /dev/loop1 
-losetup -d /dev/loop0
+losetup -d $LOOP1
+losetup -d $LOOP0
 # compress image 
 gzip $DEST/output/*.raw
