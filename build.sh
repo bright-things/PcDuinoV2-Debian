@@ -116,7 +116,7 @@ dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=/dev/loop0 bs=1024 seek=8
 # create one partition starting at 2048 which is default
 (echo n; echo p; echo 1; echo; echo; echo w) | fdisk /dev/loop0 >> /dev/null || true
 # just to make sure
-partprobe
+partprobe /dev/loop0
 
 # 2048 (start) x 512 (block size) = where to mount partition
 losetup -o 1048576 /dev/loop1  /dev/loop0
