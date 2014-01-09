@@ -64,10 +64,10 @@ patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < patch/memory.patch 
 patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < patch/gpio.patch || true
 
 # Applying Patch for high load. Could cause troubles with USB OTG port
-sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/cubietruck.fex
+sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct.fex
 
 #Change Video output ( TODO add a param so the user can choose that ?)
-sed -e 's/screen0_output_type.*/screen0_output_type     = '$DISPLAY'/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/cubietruck-vga.fex
+sed -e 's/screen0_output_type.*/screen0_output_type     = '$DISPLAY'/g' $DEST/cubie_configs/sysconfig/linux/ct.fex > $DEST/cubie_configs/sysconfig/linux/ct-vga.fex
 
 # Copying Kernel config
 cp $SRC/config/kernel.config $DEST/linux-sunxi/
@@ -86,8 +86,8 @@ cd $DEST/sunxi-tools
 make clean && make fex2bin
 cp fex2bin /usr/bin/
 # hardware configuration
-fex2bin $DEST/cubie_configs/sysconfig/linux/cubietruck-vga.fex $DEST/output/script.bin
-fex2bin $DEST/cubie_configs/sysconfig/linux/cubietruck.fex $DEST/output/script-hdmi.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/script.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/ct.fex $DEST/output/script-hdmi.bin
 
 # kernel image
 echo "------ Compiling kernel"
