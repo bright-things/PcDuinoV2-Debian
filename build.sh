@@ -121,7 +121,7 @@ dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=/dev/loop0 bs=1024 seek=8
 # create one partition starting at 2048 which is default
 (echo n; echo p; echo 1; echo; echo; echo w) | fdisk /dev/loop0 >> /dev/null || true
 # just to make sure
-partprobe
+partprobe /dev/loop0
 
 # 2048 (start) x 512 (block size) = where to mount partition
 losetup -o 1048576 /dev/loop1  /dev/loop0
@@ -131,15 +131,21 @@ mkfs.ext4 /dev/loop1
 mkdir -p $DEST/output/sdcard/
 mount /dev/loop1 $DEST/output/sdcard/
 
-
-
 echo "------ Install basic filesystem"
 # install base system
 debootstrap --no-check-gpg --arch=armhf --foreign wheezy $DEST/output/sdcard/
 # we need this
 cp /usr/bin/qemu-arm-static $DEST/output/sdcard/usr/bin/
-# second stage
+# mount proc inside chroot
+mount -t proc chproc $DEST/output/sdcard/proc
+# second stage unmounts proc 
 chroot $DEST/output/sdcard /bin/bash -c "/debootstrap/debootstrap --second-stage"
+# mount proc, sys and dev
+mount -t proc chproc $DEST/output/sdcard/proc
+mount -t sysfs chsys $DEST/output/sdcard/sys
+# This works on half the systems I tried.  Else use bind option
+mount -t devtmpfs chdev $DEST/output/sdcard/dev || mount --bind /dev $DEST/output/sdcard/dev
+mount -t devpts chpts $DEST/output/sdcard/dev/pts
 
 # update /etc/issue
 cat <<EOT > $DEST/output/sdcard/etc/issue
@@ -254,6 +260,12 @@ cp bin2fex $DEST/output/sdcard/usr/bin/
 cp nand-part $DEST/output/sdcard/usr/bin/
 
 # cleanup 
+# unmount proc, sys and dev from chroot
+umount $DEST/output/sdcard/dev/pts
+umount $DEST/output/sdcard/dev
+umount $DEST/output/sdcard/proc
+umount $DEST/output/sdcard/sys
+
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
 umount $DEST/output/sdcard/ 
