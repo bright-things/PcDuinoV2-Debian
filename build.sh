@@ -202,6 +202,7 @@ chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
 # configure MIN / MAX Speed for cpufrequtils
 sed -e 's/MIN_SPEED="0"/MIN_SPEED="480000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 sed -e 's/MAX_SPEED="0"/MAX_SPEED="1010000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
+sed -e 's/ondemand/interactive/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 
 # set password to 1234
 chroot $DEST/output/sdcard /bin/bash -c "(echo 1234;echo 1234;) | passwd root" 
