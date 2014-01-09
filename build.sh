@@ -129,16 +129,18 @@ mount /dev/loop1 $DEST/output/sdcard/
 echo "------ Install basic filesystem"
 # install base system
 debootstrap --no-check-gpg --arch=armhf --foreign wheezy $DEST/output/sdcard/
+# we need this
+cp /usr/bin/qemu-arm-static $DEST/output/sdcard/usr/bin/
+# mount proc inside chroot
+mount -t proc chproc $DEST/output/sdcard/proc
+# second stage unmounts proc 
+chroot $DEST/output/sdcard /bin/bash -c "/debootstrap/debootstrap --second-stage"
 # mount proc, sys and dev
 mount -t proc chproc $DEST/output/sdcard/proc
 mount -t sysfs chsys $DEST/output/sdcard/sys
 # This works on half the systems I tried.  Else use bind option
 mount -t devtmpfs chdev $DEST/output/sdcard/dev || mount --bind /dev $DEST/output/sdcard/dev
 mount -t devpts chpts $DEST/output/sdcard/dev/pts
-# we need this
-cp /usr/bin/qemu-arm-static $DEST/output/sdcard/usr/bin/
-# second stage
-chroot $DEST/output/sdcard /bin/bash -c "/debootstrap/debootstrap --second-stage"
 
 # update /etc/issue
 cat <<EOT > $DEST/output/sdcard/etc/issue
