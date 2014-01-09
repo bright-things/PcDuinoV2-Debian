@@ -24,7 +24,5 @@ cd ./Cubietruck-Debian
 
 Todo List
 ------------------
-- [ ] Let user param more things ( Language / Keyboard layout / Output dir / VGA-HDMI Output )
-- [ ] 2gb patch for kernel
 - [ ] wifi AP 
 - [ ] enable jumbo frames for eth0 
