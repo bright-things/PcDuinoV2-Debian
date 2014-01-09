@@ -149,7 +149,8 @@ mount -t devpts chpts $DEST/output/sdcard/dev/pts
 
 # update /etc/issue
 cat <<EOT > $DEST/output/sdcard/etc/issue
-Debian GNU/Linux 7 $VERSION \n \l
+Debian GNU/Linux 7 $VERSION
+
 EOT
 
 # apt list
