@@ -213,22 +213,24 @@ echo cubie > $DEST/output/sdcard/etc/hostname
 
 # load modules
 cat <<EOT >> $DEST/output/sdcard/etc/modules
+hci_uart
 gpio_sunxi
 bcmdhd
-sunxi_gmac
+#sunxi_gmac
 EOT
 
 # create interfaces configuration
 cat <<EOT >> $DEST/output/sdcard/etc/network/interfaces
-auto eth0 wlan0
+auto eth0
 allow-hotplug eth0
 iface eth0 inet dhcp
         hwaddress ether AE:50:30:27:5A:CF # change this
         pre-up /sbin/ifconfig eth0 mtu 3838 # setting MTU for DHCP, static just: mtu 3838
-allow-hotplug wlan0
-iface wlan0 inet dhcp
-    wpa-ssid SSID 
-    wpa-psk xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#auto wlan0
+#allow-hotplug wlan0
+#iface wlan0 inet dhcp
+#    wpa-ssid SSID 
+#    wpa-psk xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # to generate proper encrypted key: wpa_passphrase yourSSID yourpassword
 EOT
 
