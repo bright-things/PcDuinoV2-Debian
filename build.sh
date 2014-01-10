@@ -53,16 +53,21 @@ if [ -d "$DEST/linux-sunxi" ]
 then
 	cd $DEST/linux-sunxi; git pull -f; cd $SRC
 else
-	git clone https://github.com/cubieboard/linux-sunxi/ $DEST/linux-sunxi # Kernel 3.4.61+
+	# git clone https://github.com/cubieboard/linux-sunxi/ $DEST/linux-sunxi # Kernel 3.4.61+
+	git clone https://github.com/patrickhwood/linux-sunxi -b pat-3.4.75-ct $DEST/linux-sunxi # Patwood's kernel 3.4.75+
 fi
 
 # Applying Patch for 2gb memory
 patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < patch/memory.patch || true
+
 # Applying Patch for gpio
 patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < patch/gpio.patch || true
 
+# Applying Patch for high load. Could cause troubles with USB OTG port
+sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct.fex
+
 #Change Video output ( TODO add a param so the user can choose that ?)
-sed -e 's/screen0_output_type.*/screen0_output_type     = '$DISPLAY'/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/cubietruck-vga.fex
+sed -e 's/screen0_output_type.*/screen0_output_type     = '$DISPLAY'/g' $DEST/cubie_configs/sysconfig/linux/ct.fex > $DEST/cubie_configs/sysconfig/linux/ct-vga.fex
 
 # Copying Kernel config
 cp $SRC/config/kernel.config $DEST/linux-sunxi/
@@ -81,8 +86,8 @@ cd $DEST/sunxi-tools
 make clean && make fex2bin
 cp fex2bin /usr/bin/
 # hardware configuration
-fex2bin $DEST/cubie_configs/sysconfig/linux/cubietruck-vga.fex $DEST/output/script.bin
-fex2bin $DEST/cubie_configs/sysconfig/linux/cubietruck.fex $DEST/output/script-hdmi.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/script.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/ct.fex $DEST/output/script-hdmi.bin
 
 # kernel image
 echo "------ Compiling kernel"
@@ -124,19 +129,26 @@ mkfs.ext4 $LOOP1
 mkdir -p $DEST/output/sdcard/
 mount $LOOP1 $DEST/output/sdcard/
 
-
-
 echo "------ Install basic filesystem"
 # install base system
 debootstrap --no-check-gpg --arch=armhf --foreign wheezy $DEST/output/sdcard/
 # we need this
 cp /usr/bin/qemu-arm-static $DEST/output/sdcard/usr/bin/
-# second stage
+# mount proc inside chroot
+mount -t proc chproc $DEST/output/sdcard/proc
+# second stage unmounts proc 
 chroot $DEST/output/sdcard /bin/bash -c "/debootstrap/debootstrap --second-stage"
+# mount proc, sys and dev
+mount -t proc chproc $DEST/output/sdcard/proc
+mount -t sysfs chsys $DEST/output/sdcard/sys
+# This works on half the systems I tried.  Else use bind option
+mount -t devtmpfs chdev $DEST/output/sdcard/dev || mount --bind /dev $DEST/output/sdcard/dev
+mount -t devpts chpts $DEST/output/sdcard/dev/pts
 
 # update /etc/issue
 cat <<EOT > $DEST/output/sdcard/etc/issue
-Debian GNU/Linux 7 $VERSION \n \l
+Debian GNU/Linux 7 $VERSION
+
 EOT
 
 # apt list
@@ -183,12 +195,13 @@ echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen
 chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
 echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute dropbear iputils-ping ntpdate usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufreqd cpufrequtils console-setup unzip bridge-utils" 
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute dropbear iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
 
 # configure MIN / MAX Speed for cpufrequtils
-sed -e 's/MIN_SPEED="0"/MIN_SPEED="30000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
-sed -e 's/MAX_SPEED="0"/MAX_SPEED="1000000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
+sed -e 's/MIN_SPEED="0"/MIN_SPEED="480000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
+sed -e 's/MAX_SPEED="0"/MAX_SPEED="1010000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
+sed -e 's/ondemand/interactive/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 
 # set password to 1234
 chroot $DEST/output/sdcard /bin/bash -c "(echo 1234;echo 1234;) | passwd root" 
@@ -198,22 +211,24 @@ echo cubie > $DEST/output/sdcard/etc/hostname
 
 # load modules
 cat <<EOT >> $DEST/output/sdcard/etc/modules
+hci_uart
 gpio_sunxi
 bcmdhd
-sunxi_gmac
+#sunxi_gmac
 EOT
 
 # create interfaces configuration
 cat <<EOT >> $DEST/output/sdcard/etc/network/interfaces
-auto eth0 wlan0
+auto eth0
 allow-hotplug eth0
 iface eth0 inet dhcp
         hwaddress ether AE:50:30:27:5A:CF # change this
         pre-up /sbin/ifconfig eth0 mtu 3838 # setting MTU for DHCP, static just: mtu 3838
-allow-hotplug wlan0
-iface wlan0 inet dhcp
-    wpa-ssid SSID 
-    wpa-psk xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#auto wlan0
+#allow-hotplug wlan0
+#iface wlan0 inet dhcp
+#    wpa-ssid SSID 
+#    wpa-psk xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # to generate proper encrypted key: wpa_passphrase yourSSID yourpassword
 EOT
 
@@ -233,12 +248,25 @@ unzip ap6210.zip
 rm ap6210.zip
 cd $DEST/
 
-# sunxi tools 
-#cd $DEST/output/sdcard/usr/sbin
-#wget https://www.dropbox.com/s/ns4h1ddmta1h6i9/tools-arm-bin.zip
-#unzip tools-arm-bin.zip
-#rm tools-arm-bin.zip
-#cd $DEST/
+# USB redirector tools http://www.incentivespro.com
+cd $DEST
+wget http://www.incentivespro.com/usb-redirector-linux-arm-eabi.tar.gz
+tar xvfz usb-redirector-linux-arm-eabi.tar.gz
+rm usb-redirector-linux-arm-eabi.tar.gz
+cd $DEST/usb-redirector-linux-arm-eabi/files/modules/src/tusbd
+make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- KERNELDIR=$DEST/linux-sunxi/
+# configure USB redirector
+sed -e 's/%INSTALLDIR_TAG%/\/usr\/local/g' $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd > $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd1
+sed -e 's/%PIDFILE_TAG%/\/var\/run\/usbsrvd.pid/g' $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd1 > $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd
+sed -e 's/%STUBNAME_TAG%/tusbd/g' $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd > $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd1
+sed -e 's/%DAEMONNAME_TAG%/usbsrvd/g' $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd1 > $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd
+chmod +x $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd
+# copy to root
+cp $DEST/usb-redirector-linux-arm-eabi/files/usb* $DEST/output/sdcard/usr/local/bin/ 
+cp $DEST/usb-redirector-linux-arm-eabi/files/modules/src/tusbd/tusbd.ko $DEST/output/sdcard/usr/local/bin/ 
+cp $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd $DEST/output/sdcard/etc/init.d/
+# not started by default ----- update.rc rc.usbsrvd defaults
+
 # sunxi-tools
 cd $DEST/sunxi-tools
 make clean && make -j2 'fex2bin' CC=arm-linux-gnueabihf-gcc && make -j2 'bin2fex' CC=arm-linux-gnueabihf-gcc && make -j2 'nand-part' CC=arm-linux-gnueabihf-gcc
@@ -247,6 +275,12 @@ cp bin2fex $DEST/output/sdcard/usr/bin/
 cp nand-part $DEST/output/sdcard/usr/bin/
 
 # cleanup 
+# unmount proc, sys and dev from chroot
+umount $DEST/output/sdcard/dev/pts
+umount $DEST/output/sdcard/dev
+umount $DEST/output/sdcard/proc
+umount $DEST/output/sdcard/sys
+
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
 umount $DEST/output/sdcard/ 
