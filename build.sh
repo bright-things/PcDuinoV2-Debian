@@ -248,12 +248,25 @@ unzip ap6210.zip
 rm ap6210.zip
 cd $DEST/
 
-# sunxi tools 
-#cd $DEST/output/sdcard/usr/sbin
-#wget https://www.dropbox.com/s/ns4h1ddmta1h6i9/tools-arm-bin.zip
-#unzip tools-arm-bin.zip
-#rm tools-arm-bin.zip
-#cd $DEST/
+# USB redirector tools http://www.incentivespro.com
+cd $DEST
+wget http://www.incentivespro.com/usb-redirector-linux-arm-eabi.tar.gz
+tar xvfz usb-redirector-linux-arm-eabi.tar.gz
+rm usb-redirector-linux-arm-eabi.tar.gz
+cd $DEST/usb-redirector-linux-arm-eabi/files/modules/src/tusbd
+make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- KERNELDIR=$DEST/linux-sunxi/
+# configure USB redirector
+sed -e 's/%INSTALLDIR_TAG%/\/usr\/local/g' $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd > $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd1
+sed -e 's/%PIDFILE_TAG%/\/var\/run\/usbsrvd.pid/g' $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd1 > $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd
+sed -e 's/%STUBNAME_TAG%/tusbd/g' $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd > $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd1
+sed -e 's/%DAEMONNAME_TAG%/usbsrvd/g' $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd1 > $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd
+chmod +x $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd
+# copy to root
+cp $DEST/usb-redirector-linux-arm-eabi/files/usb* $DEST/output/sdcard/usr/local/bin/ 
+cp $DEST/usb-redirector-linux-arm-eabi/files/modules/src/tusbd/tusbd.ko $DEST/output/sdcard/usr/local/bin/ 
+cp $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd $DEST/output/sdcard/etc/init.d/
+# not started by default ----- update.rc rc.usbsrvd defaults
+
 # sunxi-tools
 cd $DEST/sunxi-tools
 make clean && make -j2 'fex2bin' CC=arm-linux-gnueabihf-gcc && make -j2 'bin2fex' CC=arm-linux-gnueabihf-gcc && make -j2 'nand-part' CC=arm-linux-gnueabihf-gcc
