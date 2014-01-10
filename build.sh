@@ -153,6 +153,18 @@ Debian GNU/Linux 7 $VERSION
 
 EOT
 
+# update /etc/motd
+cat > $DEST/output/sdcard/etc/motd <<EOF
+              _      _        _                       _    
+  ___  _   _ | |__  (_)  ___ | |_  _ __  _   _   ___ | | __
+ / __|| | | || '_ \ | | / _ \| __|| '__|| | | | / __|| |/ /
+| (__ | |_| || |_) || ||  __/| |_ | |   | |_| || (__ |   < 
+ \___| \__,_||_.__/ |_| \___| \__||_|    \__,_| \___||_|\_\
+                                                          
+
+EOF
+
+
 # apt list
 cat <<EOT > $DEST/output/sdcard/etc/apt/sources.list
 deb http://http.debian.net/debian wheezy main contrib non-free
