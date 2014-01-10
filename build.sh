@@ -267,7 +267,8 @@ chmod +x $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd
 cp $DEST/usb-redirector-linux-arm-eabi/files/usb* $DEST/output/sdcard/usr/local/bin/ 
 cp $DEST/usb-redirector-linux-arm-eabi/files/modules/src/tusbd/tusbd.ko $DEST/output/sdcard/usr/local/bin/ 
 cp $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd $DEST/output/sdcard/etc/init.d/
-# not started by default ----- update.rc rc.usbsrvd defaults
+# started by default ----- update.rc rc.usbsrvd defaults
+chroot $DEST/output/sdcard /bin/bash -c "update-rc.d rc.usbsrvd defaults"
 
 # sunxi-tools
 cd $DEST/sunxi-tools
