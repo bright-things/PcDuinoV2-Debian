@@ -198,6 +198,10 @@ cd $DEST/output/sdcard/etc/init.d
 cp $SRC/scripts/cubian-resize2fs $DEST/output/sdcard/etc/init.d
 cp $SRC/scripts/cubian-firstrun $DEST/output/sdcard/etc/init.d
 
+# script to install to NAND
+cp $SRC/scripts/nand-install.sh $DEST/output/sdcard/root
+
+
 # make it executable
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
 # and startable on boot
