@@ -25,5 +25,3 @@ cd ./Cubietruck-Debian
 Todo List
 ------------------
 - [ ] wifi AP 
-- [ ] enable jumbo frames for eth0 
-- [ ] NAND install 
