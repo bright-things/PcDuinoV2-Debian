@@ -69,7 +69,8 @@ e2fsck -f /dev/nand2
 
 echo "Creating NAND bootfs ... few seconds"
 mount /dev/nand1 /mnt
-tar xfz nand1-urejen.tgz -C /mnt/
+wget https://www.dropbox.com/s/7puy5v0v3pk7y6a/nand1-cubietruck-debian-boot.tgz
+tar xfz nand1-cubietruck-debian-boot.tgz -C /mnt/
 cp /boot/* /mnt/
 sed -e 's/root=\/dev\/mmcblk0p1/nand_root=\/dev\/nand2/g' /boot/uEnv.txt > /mnt/uEnv.txt 
 umount /mnt
