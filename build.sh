@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- Configuration -------------------------------------------------------------
-VERSION="CTDebian 1.3"
+VERSION="CTDebian 1.4"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
 DEST=/tmp/Cubie
