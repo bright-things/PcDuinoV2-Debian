@@ -241,7 +241,7 @@ auto eth0
 allow-hotplug eth0
 iface eth0 inet dhcp
         hwaddress ether AE:50:30:27:5A:CF # change this
-        pre-up /sbin/ifconfig eth0 mtu 3838 # setting MTU for DHCP, static just: mtu 3838
+#        pre-up /sbin/ifconfig eth0 mtu 3838 # setting MTU for DHCP, static just: mtu 3838
 #auto wlan0
 #allow-hotplug wlan0
 #iface wlan0 inet dhcp
