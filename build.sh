@@ -69,8 +69,10 @@ patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < patch/gpio.patch || true
 # Applying Patch for high load. Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct.fex
 
-#Change Video output ( TODO add a param so the user can choose that ?)
-sed -e 's/screen0_output_type.*/screen0_output_type     = '$DISPLAY'/g' $DEST/cubie_configs/sysconfig/linux/ct.fex > $DEST/cubie_configs/sysconfig/linux/ct-vga.fex
+# Prepare fex files for VGA & HDMI
+sed -e 's/screen0_output_type.*/screen0_output_type     = 3/g' $DEST/cubie_configs/sysconfig/linux/ct.fex > $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex
+sed -e 's/screen0_output_type.*/screen0_output_type     = 4/g' $DEST/cubie_configs/sysconfig/linux/ct.fex > $DEST/cubie_configs/sysconfig/linux/ct-vga.fex
+
 
 # Copying Kernel config
 cp $SRC/config/kernel.config $DEST/linux-sunxi/
@@ -89,8 +91,8 @@ cd $DEST/sunxi-tools
 make clean && make fex2bin
 cp fex2bin /usr/bin/
 # hardware configuration
-fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/script.bin
-fex2bin $DEST/cubie_configs/sysconfig/linux/ct.fex $DEST/output/script-hdmi.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/script-vga.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $DEST/output/script-hdmi.bin
 
 # kernel image
 echo "------ Compiling kernel"
@@ -257,8 +259,14 @@ EOT
 echo T0:2345:respawn:/sbin/getty -L ttyS0 115200 vt100 >> $DEST/output/sdcard/etc/inittab
 
 cp $DEST/output/uEnv.txt $DEST/output/sdcard/boot/
-cp $DEST/output/script.bin $DEST/output/sdcard/boot/
 cp $DEST/linux-sunxi/arch/arm/boot/uImage $DEST/output/sdcard/boot/
+
+# copy proper bin file
+if [ $DISPLAY == 4 ]; then
+cp $DEST/output/script-vga.bin $DEST/output/sdcard/boot/script.bin
+else
+cp $DEST/output/script-hdmi.bin $DEST/output/sdcard/boot/script.bin
+fi
 
 cp -R $DEST/linux-sunxi/output/lib/modules $DEST/output/sdcard/lib/
 cp -R $DEST/linux-sunxi/output/lib/firmware/ $DEST/output/sdcard/lib/
