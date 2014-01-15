@@ -89,7 +89,7 @@ echo "------ Compiling sunxi tools"
 cd $DEST/sunxi-tools
 # sunxi-tools
 make clean && make fex2bin
-cp fex2bin /usr/bin/
+cp fex2bin /usr/local/bin/
 # hardware configuration
 fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/script-vga.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $DEST/output/script-hdmi.bin
