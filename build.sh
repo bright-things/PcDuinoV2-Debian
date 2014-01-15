@@ -271,11 +271,11 @@ fi
 cp -R $DEST/linux-sunxi/output/lib/modules $DEST/output/sdcard/lib/
 cp -R $DEST/linux-sunxi/output/lib/firmware/ $DEST/output/sdcard/lib/
 
-cd $DEST/output/sdcard/lib/firmware
-wget https://www.dropbox.com/s/o3evaiuidtg6xb5/ap6210.zip
-unzip ap6210.zip
-rm ap6210.zip
-cd $DEST/
+#cd $DEST/output/sdcard/lib/firmware
+#wget https://www.dropbox.com/s/o3evaiuidtg6xb5/ap6210.zip
+#unzip ap6210.zip
+#rm ap6210.zip
+#cd $DEST/
 
 # USB redirector tools http://www.incentivespro.com
 cd $DEST
