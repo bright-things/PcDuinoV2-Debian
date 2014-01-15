@@ -5,7 +5,7 @@ VERSION="CTDebian 1.4"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
 DEST=/tmp/Cubie
-DISPLAY=3  # "0:none; 1:lcd; 2:tv; 3:hdmi; 4:vga"
+DISPLAY=4  # "3:hdmi; 4:vga"
 # --- End -----------------------------------------------------------------------
 SRC=$(pwd)
 set -e
