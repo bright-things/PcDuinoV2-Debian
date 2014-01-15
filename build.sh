@@ -88,8 +88,8 @@ make clean && make -j2 'cubietruck' CROSS_COMPILE=arm-linux-gnueabihf-
 echo "------ Compiling sunxi tools"
 cd $DEST/sunxi-tools
 # sunxi-tools
-make clean && make fex2bin
-cp fex2bin /usr/local/bin/
+make clean && make fex2bin && make bin2fex
+cp fex2bin bin2fex /usr/local/bin/
 # hardware configuration
 fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/script-vga.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $DEST/output/script-hdmi.bin
