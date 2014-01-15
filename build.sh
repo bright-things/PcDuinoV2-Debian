@@ -61,10 +61,10 @@ fi
 cd $DEST/linux-sunxi/firmware; wget -q https://www.dropbox.com/s/o3evaiuidtg6xb5/ap6210.zip -O temp.zip; unzip -o temp.zip; rm temp.zip
 
 # Applying Patch for 2gb memory
-patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < patch/memory.patch || true
+#patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < $SRC/patch/memory.patch || true
 
 # Applying Patch for gpio
-patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < patch/gpio.patch || true
+#patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < $SRC/patch/gpio.patch || true
 
 # Applying Patch for high load. Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct.fex
