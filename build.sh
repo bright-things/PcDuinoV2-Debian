@@ -57,6 +57,9 @@ else
 	git clone https://github.com/patrickhwood/linux-sunxi -b pat-3.4.75-ct $DEST/linux-sunxi # Patwood's kernel 3.4.75+
 fi
 
+# Adding wlan firmware to kernel source
+cd $DEST/linux-sunxi/firmware; wget -q https://www.dropbox.com/s/o3evaiuidtg6xb5/ap6210.zip -O temp.zip; unzip -o temp.zip; rm temp.zip
+
 # Applying Patch for 2gb memory
 patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < patch/memory.patch || true
 
