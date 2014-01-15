@@ -57,12 +57,8 @@ return 0
 case "$1" in
   start)
 	    reboot=false
-        if ! ls /etc/ssh/ssh_host_* > /dev/null 2>&1;then
-                if which sshd > /dev/null;then
-                        dpkg-reconfigure openssh-server
-                fi
-        fi
-	#	/usr/bin/ajenti-ssl-gen `/bin/hostname` -f
+	        rm /etc/ssh/ssh_host*
+                dpkg-reconfigure openssh-server
 		set +e
 		echo "Expanding rootfs..."
 		if do_expand_rootfs;then
