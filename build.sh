@@ -264,7 +264,7 @@ cp $DEST/output/uEnv.txt $DEST/output/sdcard/boot/
 cp $DEST/linux-sunxi/arch/arm/boot/uImage $DEST/output/sdcard/boot/
 
 # copy proper bin file
-if [ $DISPLAY == 4 ]; then
+if [ $DISPLAY = 4 ]; then
 cp $DEST/output/script-vga.bin $DEST/output/sdcard/boot/script.bin
 else
 cp $DEST/output/script-hdmi.bin $DEST/output/sdcard/boot/script.bin
