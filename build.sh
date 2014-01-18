@@ -97,7 +97,7 @@ cd $DEST/linux-sunxi
 make clean
 
 # Adding wlan firmware to kernel source
-cd $DEST/linux-sunxi/firmware; wget -q https://www.dropbox.com/s/o3evaiuidtg6xb5/ap6210.zip -O temp.zip; unzip -o temp.zip; rm temp.zip
+cd $DEST/linux-sunxi/firmware; wget -q http://www.mediafire.com/download/08rvp8db4qj7k21/ap6210.zip -O temp.zip; unzip -o temp.zip; rm temp.zip
 cd $DEST/linux-sunxi
 
 make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
