@@ -97,7 +97,8 @@ cd $DEST/linux-sunxi
 make clean
 
 # Adding wlan firmware to kernel source
-cd $DEST/linux-sunxi/firmware; wget -q http://www.mediafire.com/download/08rvp8db4qj7k21/ap6210.zip -O temp.zip; unzip -o temp.zip; rm temp.zip
+cd $DEST/linux-sunxi/firmware; 
+unzip -o $SRC/bin/ap6210.zip
 cd $DEST/linux-sunxi
 
 make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
@@ -205,7 +206,7 @@ cp $SRC/scripts/cubian-firstrun $DEST/output/sdcard/etc/init.d
 
 # script to install to NAND
 cp $SRC/scripts/nand-install.sh $DEST/output/sdcard/root
-
+cp $SRC/bin/nand1-cubietruck-debian-boot.tgz $DEST/output/sdcard/root
 
 # make it executable
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
@@ -218,7 +219,7 @@ echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen
 chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
 echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install git dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
 
 # configure MIN / MAX Speed for cpufrequtils
@@ -253,6 +254,22 @@ iface eth0 inet dhcp
 #    wpa-ssid SSID 
 #    wpa-psk xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # to generate proper encrypted key: wpa_passphrase yourSSID yourpassword
+EOT
+
+
+# create interfaces if you want to have AP. /etc/modules must be: bcmdhd op_mode=2
+cat <<EOT >> $DEST/output/sdcard/etc/network/interfaces.hostapd
+auto lo br0
+iface lo inet loopback
+
+allow-hotplug eth0
+iface eth0 inet manual
+
+allow-hotplug wlan0
+iface wlan0 inet manual
+
+iface br0 inet dhcp
+bridge_ports eth0 wlan0
 EOT
 
 # enable serial console (Debian/sysvinit way)
@@ -296,6 +313,11 @@ cp $DEST/usb-redirector-linux-arm-eabi/files/modules/src/tusbd/tusbd.ko $DEST/ou
 cp $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd $DEST/output/sdcard/etc/init.d/
 # started by default ----- update.rc rc.usbsrvd defaults
 chroot $DEST/output/sdcard /bin/bash -c "update-rc.d rc.usbsrvd defaults"
+
+# hostapd from testing binary replace.
+cd $DEST/output/sdcard/usr/sbin/
+tar xvfz $SRC/bin/hostapd21.tgz
+cp $SRC/config/hostapd.conf $DEST/output/sdcard/etc/
 
 # sunxi-tools
 cd $DEST/sunxi-tools
