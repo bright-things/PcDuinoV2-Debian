@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- Configuration -------------------------------------------------------------
-VERSION="CTDebian 1.4"
+VERSION="CTDebian 1.5"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
 DEST=/tmp/Cubie
@@ -58,7 +58,7 @@ else
 fi
 
 # Applying Patch for 2gb memory
-#patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < $SRC/patch/memory.patch || true
+patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < $SRC/patch/memory.patch || true
 
 # Applying Patch for gpio
 #patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < $SRC/patch/gpio.patch || true
@@ -219,7 +219,7 @@ echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen
 chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
 echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y console-data sudo install git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
 
 # configure MIN / MAX Speed for cpufrequtils
@@ -238,7 +238,7 @@ cat <<EOT >> $DEST/output/sdcard/etc/modules
 hci_uart
 gpio_sunxi
 bcmdhd
-#sunxi_gmac
+# if you want access point mode, load wifi module this way: bcmdhd op_mode=2
 EOT
 
 # create interfaces configuration
@@ -246,7 +246,7 @@ cat <<EOT >> $DEST/output/sdcard/etc/network/interfaces
 auto eth0
 allow-hotplug eth0
 iface eth0 inet dhcp
-        hwaddress ether AE:50:30:27:5A:CF # change this
+        hwaddress ether # will be added at first boot
 #        pre-up /sbin/ifconfig eth0 mtu 3838 # setting MTU for DHCP, static just: mtu 3838
 #auto wlan0
 #allow-hotplug wlan0
@@ -288,12 +288,6 @@ fi
 cp -R $DEST/linux-sunxi/output/lib/modules $DEST/output/sdcard/lib/
 cp -R $DEST/linux-sunxi/output/lib/firmware/ $DEST/output/sdcard/lib/
 
-#cd $DEST/output/sdcard/lib/firmware
-#wget https://www.dropbox.com/s/o3evaiuidtg6xb5/ap6210.zip
-#unzip ap6210.zip
-#rm ap6210.zip
-#cd $DEST/
-
 # USB redirector tools http://www.incentivespro.com
 cd $DEST
 wget http://www.incentivespro.com/usb-redirector-linux-arm-eabi.tar.gz
@@ -319,6 +313,7 @@ cd $DEST/output/sdcard/usr/sbin/
 tar xvfz $SRC/bin/hostapd21.tgz
 cp $SRC/config/hostapd.conf $DEST/output/sdcard/etc/
 
+
 # sunxi-tools
 cd $DEST/sunxi-tools
 make clean && make -j2 'fex2bin' CC=arm-linux-gnueabihf-gcc && make -j2 'bin2fex' CC=arm-linux-gnueabihf-gcc && make -j2 'nand-part' CC=arm-linux-gnueabihf-gcc
@@ -339,4 +334,4 @@ umount $DEST/output/sdcard/
 losetup -d $LOOP1
 losetup -d $LOOP0
 # compress image 
-gzip $DEST/output/*.raw
+gzip $DEST/output/*.raw 
