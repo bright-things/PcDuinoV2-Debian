@@ -2,6 +2,7 @@
 
 # --- Configuration -------------------------------------------------------------
 VERSION="CTDebian 1.5"
+SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
 DEST=/tmp/Cubie
@@ -77,7 +78,7 @@ cp $SRC/config/kernel.config $DEST/linux-sunxi/
 #--------------------------------------------------------------------------------
 # Compiling everything
 #--------------------------------------------------------------------------------
-#if false; then
+if [ "$SOURCE_COMPILE" = "yes" ]; then
 echo "------ Compiling kernel boot loaderb"
 cd $DEST/u-boot-sunxi
 # boot loader
@@ -107,7 +108,7 @@ cp $DEST/linux-sunxi/kernel.config $DEST/linux-sunxi/.config
 make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage modules
 make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
 make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HDR_PATH=output headers_install
-#fi
+fi
 
 #--------------------------------------------------------------------------------
 # Creating SD Images
