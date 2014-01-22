@@ -271,6 +271,7 @@ iface wlan0 inet manual
 
 iface br0 inet dhcp
 bridge_ports eth0 wlan0
+hwaddress ether # will be added at first boot
 EOT
 
 # enable serial console (Debian/sysvinit way)
