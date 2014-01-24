@@ -50,7 +50,7 @@ FLAG=".reboot-nand-install.pid"
 if [ ! -f $FLAG ]; then
 echo "Partitioning"
 apt-get -y -qq install dosfstools
-(echo y;) | nand-part /dev/nand 32768 'bootloader 32768' 'rootfs 0' >> /dev/null || true
+(echo y;) | nand-part -f a20 /dev/nand 32768 'bootloader 32768' 'rootfs 0' >> /dev/null || true
 echo "
 Press a key to reboot than run this script again!
 "
