@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- Configuration -------------------------------------------------------------
-VERSION="CTDebian 1.5"
+VERSION="CTDebian 1.52"
 SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
