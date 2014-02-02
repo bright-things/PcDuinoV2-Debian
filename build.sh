@@ -55,7 +55,7 @@ then
 	cd $DEST/linux-sunxi; git pull -f; cd $SRC
 else
 	# git clone https://github.com/cubieboard/linux-sunxi/ $DEST/linux-sunxi # Kernel 3.4.61+
-	git clone https://github.com/patrickhwood/linux-sunxi -b pat-3.4.75-ct $DEST/linux-sunxi # Patwood's kernel 3.4.75+
+	git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
 fi
 
 # Applying Patch for 2gb memory
