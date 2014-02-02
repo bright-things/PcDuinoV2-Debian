@@ -117,26 +117,27 @@ echo "------ Creating SD Images"
 cd $DEST/output
 # create 1Gb image and mount image to next free loop device
 dd if=/dev/zero of=debian_rootfs.raw bs=1M count=1000
-LOOP0=$(losetup -f)
-losetup $LOOP0 debian_rootfs.raw 
+LOOP=$(losetup -f)
+losetup $LOOP debian_rootfs.raw
 
 echo "------ Partitionning and mounting filesystem"
 # make image bootable
-dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=$LOOP0 bs=1024 seek=8
+dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=$LOOP bs=1024 seek=8
 
 # create one partition starting at 2048 which is default
-(echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP0 >> /dev/null || true
+(echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP >> /dev/null || true
 # just to make sure
-partprobe $LOOP0
+partprobe $LOOP
+losetup -d $LOOP
 
-LOOP1=$(losetup -f)
 # 2048 (start) x 512 (block size) = where to mount partition
-losetup -o 1048576 $LOOP1 $LOOP0 
+losetup -o 1048576 $LOOP debian_rootfs.raw
 # create filesystem
-mkfs.ext4 $LOOP1
+mkfs.ext4 $LOOP
 # create mount point and mount image 
 mkdir -p $DEST/output/sdcard/
-mount $LOOP1 $DEST/output/sdcard/
+mount $LOOP $DEST/output/sdcard/
+mount
 
 echo "------ Install basic filesystem"
 # install base system
@@ -335,7 +336,6 @@ umount $DEST/output/sdcard/sys
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
 umount $DEST/output/sdcard/ 
-losetup -d $LOOP1
-losetup -d $LOOP0
+losetup -d $LOOP
 # compress image 
 gzip $DEST/output/*.raw 
