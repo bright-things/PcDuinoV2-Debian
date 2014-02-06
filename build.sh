@@ -22,7 +22,7 @@ sleep 3
 # Downloading necessary files
 #--------------------------------------------------------------------------------
 echo "------ Downloading necessary files"
-apt-get -qq -y install binfmt-support bison build-essential ccache debootstrap flex gawk gcc-arm-linux-gnueabi gcc-arm-linux-gnueabihf gettext linux-headers-generic linux-image-generic lvm2 qemu-user-static texinfo texlive u-boot-tools uuid-dev zlib1g-dev unzip libncurses5-dev pkg-config libusb-1.0-0-dev
+apt-get -qq -y install binfmt-support bison build-essential ccache debootstrap flex gawk gcc-arm-linux-gnueabi gcc-arm-linux-gnueabihf gettext linux-headers-generic linux-image-generic lvm2 qemu-user-static texinfo texlive u-boot-tools uuid-dev zlib1g-dev unzip libncurses5-dev pkg-config libusb-1.0-0-dev parted
 
 #--------------------------------------------------------------------------------
 # Preparing output / destination files
@@ -117,32 +117,35 @@ echo "------ Creating SD Images"
 cd $DEST/output
 # create 1Gb image and mount image to next free loop device
 dd if=/dev/zero of=debian_rootfs.raw bs=1M count=1000
-LOOP0=$(losetup -f)
-losetup $LOOP0 debian_rootfs.raw 
+LOOP=$(losetup -f)
+losetup $LOOP debian_rootfs.raw
 
 echo "------ Partitionning and mounting filesystem"
 # make image bootable
-dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=$LOOP0 bs=1024 seek=8
+dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=$LOOP bs=1024 seek=8
 
 # create one partition starting at 2048 which is default
-(echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP0 >> /dev/null || true
+(echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP >> /dev/null || true
 # just to make sure
-partprobe $LOOP0
+partprobe $LOOP
+losetup -d $LOOP
 
-LOOP1=$(losetup -f)
 # 2048 (start) x 512 (block size) = where to mount partition
-losetup -o 1048576 $LOOP1 $LOOP0 
+losetup -o 1048576 $LOOP debian_rootfs.raw
 # create filesystem
-mkfs.ext4 $LOOP1
+mkfs.ext4 $LOOP
 # create mount point and mount image 
 mkdir -p $DEST/output/sdcard/
-mount $LOOP1 $DEST/output/sdcard/
+mount $LOOP $DEST/output/sdcard/
+mount
 
 echo "------ Install basic filesystem"
 # install base system
 debootstrap --no-check-gpg --arch=armhf --foreign wheezy $DEST/output/sdcard/
 # we need this
 cp /usr/bin/qemu-arm-static $DEST/output/sdcard/usr/bin/
+# enable arm binary format so that the cross-architecture chroot environment will work
+test -e /proc/sys/fs/binfmt_misc/qemu-arm || update-binfmts --enable qemu-arm
 # mount proc inside chroot
 mount -t proc chproc $DEST/output/sdcard/proc
 # second stage unmounts proc 
@@ -333,7 +336,6 @@ umount $DEST/output/sdcard/sys
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
 umount $DEST/output/sdcard/ 
-losetup -d $LOOP1
-losetup -d $LOOP0
+losetup -d $LOOP
 # compress image 
 gzip $DEST/output/*.raw 
