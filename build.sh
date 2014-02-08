@@ -66,12 +66,13 @@ patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < $SRC/patch/memory.p
 #patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < $SRC/patch/gpio.patch || true
 
 # Applying Patch for high load. Could cause troubles with USB OTG port
-sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct.fex
+# sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct.fex
 
 # Prepare fex files for VGA & HDMI
-sed -e 's/screen0_output_type.*/screen0_output_type     = 3/g' $DEST/cubie_configs/sysconfig/linux/ct.fex > $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex
-sed -e 's/screen0_output_type.*/screen0_output_type     = 4/g' $DEST/cubie_configs/sysconfig/linux/ct.fex > $DEST/cubie_configs/sysconfig/linux/ct-vga.fex
-
+sed -e 's/screen0_output_type.*/screen0_output_type     = 3/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex
+sed -e 's/screen0_output_type.*/screen0_output_type     = 4/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct-vga.fex
+sed -e 's/screen0_output_type.*/screen0_output_type     = 3/g' $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex > $DEST/cubie_configs/sysconfig/linux/cb2-hdmi.fex
+sed -e 's/screen0_output_type.*/screen0_output_type     = 4/g' $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex > $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex
 
 # Copying Kernel config
 cp $SRC/config/kernel.config $DEST/linux-sunxi/
@@ -90,9 +91,10 @@ cd $DEST/sunxi-tools
 make clean && make fex2bin && make bin2fex
 cp fex2bin bin2fex /usr/local/bin/
 # hardware configuration
-fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/script-vga.bin
-fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $DEST/output/script-hdmi.bin
-
+fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/ct-vga.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $DEST/output/ct-hdmi.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-hdmi.fex $DEST/output/cb2-hdmi.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex $DEST/output/cb2-vga.bin
 # kernel image
 echo "------ Compiling kernel"
 cd $DEST/linux-sunxi
@@ -281,16 +283,9 @@ EOT
 # enable serial console (Debian/sysvinit way)
 echo T0:2345:respawn:/sbin/getty -L ttyS0 115200 vt100 >> $DEST/output/sdcard/etc/inittab
 
-cp $DEST/output/uEnv.txt $DEST/output/sdcard/boot/
+cp $DEST/output/uEnv.* $DEST/output/sdcard/boot/
+cp $DEST/output/*.bin $DEST/output/sdcard/boot/
 cp $DEST/linux-sunxi/arch/arm/boot/uImage $DEST/output/sdcard/boot/
-
-# copy proper bin file
-if [ $DISPLAY = 4 ]; then
-cp $DEST/output/script-vga.bin $DEST/output/sdcard/boot/script.bin
-else
-cp $DEST/output/script-hdmi.bin $DEST/output/sdcard/boot/script.bin
-fi
-
 cp -R $DEST/linux-sunxi/output/lib/modules $DEST/output/sdcard/lib/
 cp -R $DEST/linux-sunxi/output/lib/firmware/ $DEST/output/sdcard/lib/
 
@@ -338,5 +333,28 @@ rm $DEST/output/sdcard/usr/bin/qemu-arm-static
 # umount images 
 umount $DEST/output/sdcard/ 
 losetup -d $LOOP
-# compress image 
-gzip $DEST/output/*.raw 
+
+# let's create nice file name
+VERSION="${VERSION/ /_}"
+VGA=$VERSION"_vga"
+HDMI=$VERSION"_hdmi"
+#####
+
+cp $DEST/output/debian_rootfs.raw $DEST/output/$HDMI.raw
+cd $DEST/output/
+zip $HDMI.zip $HDMI.raw
+
+# let's create VGA version
+LOOP=$(losetup -f)
+losetup -o 1048576 $LOOP $DEST/output/debian_rootfs.raw
+mount $LOOP $DEST/output/sdcard/
+sed -e 's/ct-hdmi.bin/ct-vga.bin/g' -i $DEST/output/sdcard/boot/uEnv.ct
+sed -e 's/cb2-hdmi.bin/cb2-vga.bin/g' -i $DEST/output/sdcard/boot/uEnv.cb2
+umount $DEST/output/sdcard/ 
+losetup -d $LOOP
+mv $DEST/output/debian_rootfs.raw $DEST/output/$VGA.raw
+cd $DEST/output/
+zip $VGA.zip $VGA.raw
+
+
+
