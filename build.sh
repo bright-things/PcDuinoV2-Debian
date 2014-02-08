@@ -36,7 +36,8 @@ if [ -d "$DEST/u-boot-sunxi" ]
 then
 	cd $DEST/u-boot-sunxi ; git pull; cd $SRC
 else
-	git clone https://github.com/cubieboard/u-boot-sunxi $DEST/u-boot-sunxi # Boot loader
+	#git clone https://github.com/cubieboard/u-boot-sunxi $DEST/u-boot-sunxi # Boot loader
+	git clone https://github.com/patrickhwood/u-boot -b pat-cb2-ct  $DEST/u-boot-sunxi # CB2 / CT Dual boot loader
 fi
 if [ -d "$DEST/sunxi-tools" ]
 then
