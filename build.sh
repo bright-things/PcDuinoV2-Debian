@@ -30,7 +30,7 @@ apt-get -qq -y install binfmt-support bison build-essential ccache debootstrap f
 
 echo "------ Fetching files from github"
 mkdir -p $DEST/output
-cp output/uEnv.txt $DEST/output
+cp output/uEnv.* $DEST/output
 
 if [ -d "$DEST/u-boot-sunxi" ]
 then
