@@ -1,12 +1,11 @@
 #!/bin/bash
 
 # --- Configuration -------------------------------------------------------------
-VERSION="CTDebian 1.52"
+VERSION="CTDebian 1.6"
 SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
 DEST=/tmp/Cubie
-DISPLAY=4  # "3:hdmi; 4:vga"
 # --- End -----------------------------------------------------------------------
 SRC=$(pwd)
 set -e
@@ -66,7 +65,8 @@ fi
 #patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < $SRC/patch/gpio.patch || true
 
 # Applying Patch for high load. Could cause troubles with USB OTG port
- sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct.fex
+sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
+sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex
 
 # Prepare fex files for VGA & HDMI
 sed -e 's/screen0_output_type.*/screen0_output_type     = 3/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex
@@ -80,7 +80,6 @@ cp $SRC/config/kernel.config $DEST/linux-sunxi/
 #--------------------------------------------------------------------------------
 # Compiling everything
 #--------------------------------------------------------------------------------
-if [ "$SOURCE_COMPILE" = "yes" ]; then
 echo "------ Compiling kernel boot loaderb"
 cd $DEST/u-boot-sunxi
 # boot loader
@@ -95,6 +94,7 @@ fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/ct-vga.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $DEST/output/ct-hdmi.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-hdmi.fex $DEST/output/cb2-hdmi.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex $DEST/output/cb2-vga.bin
+if [ "$SOURCE_COMPILE" = "yes" ]; then
 # kernel image
 echo "------ Compiling kernel"
 cd $DEST/linux-sunxi
@@ -355,6 +355,3 @@ losetup -d $LOOP
 mv $DEST/output/debian_rootfs.raw $DEST/output/$VGA.raw
 cd $DEST/output/
 zip $VGA.zip $VGA.raw
-
-
-
