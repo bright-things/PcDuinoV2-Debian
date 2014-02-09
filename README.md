@@ -1,7 +1,7 @@
 Cubietruck-Debian
 =================
 
-Scripts to create an Image of Debian for cubietruck
+Scripts to create an Image of Debian for Cubieboard 2 and Cubietruck
 
 Images, manual and history :
 
