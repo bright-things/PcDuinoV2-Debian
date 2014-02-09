@@ -72,8 +72,21 @@ mount /dev/nand1 /mnt
 tar xfz nand1-cubietruck-debian-boot.tgz -C /mnt/
 rm nand1-cubietruck-debian-boot.tgz
 rm nand_mbr.backup
-cp /boot/* /mnt/
-sed -e 's/root=\/dev\/mmcblk0p1/nand_root=\/dev\/nand2/g' /boot/uEnv.txt > /mnt/uEnv.txt 
+
+#choose proper kernel configuration for CB2 or CT 
+if [ $(cat /proc/meminfo | grep MemTotal | grep -o '[0-9]\+') -ge 1531749 ]; then
+	cp /boot/uEnv.ct /mnt/uEnv.txt
+else
+	cp /boot/uEnv.cb2 /mnt/uEnv.txt
+fi
+
+cp /boot/uImage /mnt/
+cp /boot/*.bin /mnt/
+
+# change root from sd card to nand in both configs
+sed -e 's/root=\/dev\/mmcblk0p1/nand_root=\/dev\/nand2/g' -i /mnt/uEnv.txt
+# different path
+sed -e 's/\/boot\///g' -i /mnt/uEnv.txt
 umount /mnt
 
 echo "Creating NAND rootfs ... up to 5 min"
