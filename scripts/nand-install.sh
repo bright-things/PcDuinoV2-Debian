@@ -14,6 +14,7 @@ cat > .install-exclude <<EOF
 /mnt/*
 /run/*
 /tmp/*
+/boot/*
 EOF
 
 exec 2>/dev/null
