@@ -1,9 +1,9 @@
 Cubietruck-Debian
 =================
 
-Scripts to create an Image of Debian for cubietruck
+Scripts to create an Image of Debian for Cubieboard 2 and Cubietruck
 
-Created from Igor Pečovnik work at :
+Images, manual and history :
 
 http://www.igorpecovnik.com/2013/12/24/cubietruck-debian-wheezy-sd-card-image/
 
@@ -17,12 +17,11 @@ cd ~
 git clone https://github.com/igorpecovnik/Cubietruck-Debian
 chmod +x ./Cubietruck-Debian/build.sh
 cd ./Cubietruck-Debian
-./build.sh
+sudo ./build.sh
 ```
 
 
 
 Todo List
 ------------------
-- [ ] wifi AP 
-- [ ] enable jumbo frames for eth0 
+- none
