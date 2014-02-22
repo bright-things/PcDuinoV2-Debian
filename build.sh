@@ -6,6 +6,10 @@ SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
 DEST=/tmp/Cubie
+CPUS=$(grep -c 'processor' /proc/cpuinfo)
+# 100% cpu usage
+#CTHREADS="-j$(($CPUS + $CPUS/2))"
+CTHREADS="-j${CPUS}"
 # --- End -----------------------------------------------------------------------
 SRC=$(pwd)
 set -e
@@ -83,7 +87,7 @@ cp $SRC/config/kernel.config $DEST/linux-sunxi/
 echo "------ Compiling kernel boot loaderb"
 cd $DEST/u-boot-sunxi
 # boot loader
-make clean && make -j2 'cubietruck' CROSS_COMPILE=arm-linux-gnueabihf-
+make clean && make $CTHREADS 'cubietruck' CROSS_COMPILE=arm-linux-gnueabihf-
 echo "------ Compiling sunxi tools"
 cd $DEST/sunxi-tools
 # sunxi-tools
@@ -105,12 +109,12 @@ cd $DEST/linux-sunxi/firmware;
 unzip -o $SRC/bin/ap6210.zip
 cd $DEST/linux-sunxi
 
-make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
 # get proven config
 cp $DEST/linux-sunxi/kernel.config $DEST/linux-sunxi/.config
-make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage modules
-make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
-make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HDR_PATH=output headers_install
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage modules
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HDR_PATH=output headers_install
 fi
 
 #--------------------------------------------------------------------------------
@@ -295,7 +299,7 @@ wget http://www.incentivespro.com/usb-redirector-linux-arm-eabi.tar.gz
 tar xvfz usb-redirector-linux-arm-eabi.tar.gz
 rm usb-redirector-linux-arm-eabi.tar.gz
 cd $DEST/usb-redirector-linux-arm-eabi/files/modules/src/tusbd
-make -j2 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- KERNELDIR=$DEST/linux-sunxi/
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- KERNELDIR=$DEST/linux-sunxi/
 # configure USB redirector
 sed -e 's/%INSTALLDIR_TAG%/\/usr\/local/g' $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd > $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd1
 sed -e 's/%PIDFILE_TAG%/\/var\/run\/usbsrvd.pid/g' $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd1 > $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd
@@ -317,7 +321,7 @@ cp $SRC/config/hostapd.conf $DEST/output/sdcard/etc/
 
 # sunxi-tools
 cd $DEST/sunxi-tools
-make clean && make -j2 'fex2bin' CC=arm-linux-gnueabihf-gcc && make -j2 'bin2fex' CC=arm-linux-gnueabihf-gcc && make -j2 'nand-part' CC=arm-linux-gnueabihf-gcc
+make clean && make $CTHREADS 'fex2bin' CC=arm-linux-gnueabihf-gcc && make $CTHREADS 'bin2fex' CC=arm-linux-gnueabihf-gcc && make $CTHREADS 'nand-part' CC=arm-linux-gnueabihf-gcc
 cp fex2bin $DEST/output/sdcard/usr/bin/ 
 cp bin2fex $DEST/output/sdcard/usr/bin/
 cp nand-part $DEST/output/sdcard/usr/bin/
