@@ -4,16 +4,19 @@ VERSION="CTDebian 1.7"
 SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
-DEST=/home/cubie/image
+DEST=/tmp/Cubie
 ROOTPWD="1234"
-CPUS=$(grep -c 'processor' /proc/cpuinfo)
-# 100% cpu usage
-CTHREADS="-j$(($CPUS + $CPUS/2))"
-#CTHREADS="-j${CPUS}"
 # --- End -----------------------------------------------------------------------
 SRC=$(pwd)
 set -e
 
+# optimize build time
+CPUS=$(grep -c 'processor' /proc/cpuinfo) 
+
+CTHREADS="-j$(($CPUS + $CPUS/2))" # 100% cpu usage
+#CTHREADS="-j${CPUS}"
+
+# To display build time at the end
 start=`date +%s`
 
 #Requires root ..
