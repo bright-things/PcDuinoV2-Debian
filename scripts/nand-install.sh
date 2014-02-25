@@ -74,15 +74,23 @@ tar xfz nand1-cubietruck-debian-boot.tgz -C /mnt/
 rm nand1-cubietruck-debian-boot.tgz
 rm nand_mbr.backup
 
-#choose proper kernel configuration for CB2 or CT 
+# choose proper kernel configuration for CB2 or CT 
 if [ $(cat /proc/meminfo | grep MemTotal | grep -o '[0-9]\+') -ge 1531749 ]; then
 	cp /boot/uEnv.ct /mnt/uEnv.txt
+	prefix="ct"
 else
 	cp /boot/uEnv.cb2 /mnt/uEnv.txt
+	prefix="cb2"
+fi
+
+# choose proper script for VGA or HDMI
+if grep -q ct-hdmi.bin /boot/uEnv.ct; then 
+	cp /boot/$prefix-hdmi.bin /mnt/script.bin
+	else 
+	cp /boot/$prefix-vga.bin /mnt/script.bin
 fi
 
 cp /boot/uImage /mnt/
-cp /boot/*.bin /mnt/
 
 # change root from sd card to nand in both configs
 sed -e 's/root=\/dev\/mmcblk0p1/nand_root=\/dev\/nand2/g' -i /mnt/uEnv.txt
