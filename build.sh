@@ -1,18 +1,20 @@
 #!/bin/bash
-
 # --- Configuration -------------------------------------------------------------
-VERSION="CTDebian 1.6"
+VERSION="CTDebian 1.7"
 SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
-DEST=/tmp/Cubie
+DEST=/home/cubie/image
+ROOTPWD="1234"
 CPUS=$(grep -c 'processor' /proc/cpuinfo)
 # 100% cpu usage
-#CTHREADS="-j$(($CPUS + $CPUS/2))"
-CTHREADS="-j${CPUS}"
+CTHREADS="-j$(($CPUS + $CPUS/2))"
+#CTHREADS="-j${CPUS}"
 # --- End -----------------------------------------------------------------------
 SRC=$(pwd)
 set -e
+
+start=`date +%s`
 
 #Requires root ..
 if [ "$UID" -ne 0 ]
@@ -126,15 +128,17 @@ cd $DEST/output
 dd if=/dev/zero of=debian_rootfs.raw bs=1M count=1000
 LOOP=$(losetup -f)
 losetup $LOOP debian_rootfs.raw
-
+sync
 echo "------ Partitionning and mounting filesystem"
 # make image bootable
 dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=$LOOP bs=1024 seek=8
-
+sync
 # create one partition starting at 2048 which is default
 (echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP >> /dev/null || true
 # just to make sure
+sync
 partprobe $LOOP
+sync
 losetup -d $LOOP
 
 # 2048 (start) x 512 (block size) = where to mount partition
@@ -143,7 +147,7 @@ losetup -o 1048576 $LOOP debian_rootfs.raw
 mkfs.ext4 $LOOP
 # create mount point and mount image 
 mkdir -p $DEST/output/sdcard/
-mount $LOOP $DEST/output/sdcard/
+mount -t ext4 $LOOP $DEST/output/sdcard/
 mount
 
 echo "------ Install basic filesystem"
@@ -218,6 +222,8 @@ cp $SRC/scripts/cubian-firstrun $DEST/output/sdcard/etc/init.d
 # script to install to NAND
 cp $SRC/scripts/nand-install.sh $DEST/output/sdcard/root
 cp $SRC/bin/nand1-cubietruck-debian-boot.tgz $DEST/output/sdcard/root
+cp $SRC/bin/ramlog_2.0.0_all.deb $DEST/output/sdcard/tmp
+
 
 # make it executable
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
@@ -230,8 +236,17 @@ echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen
 chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
 echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install screen libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
+
+# ramlog
+chroot $DEST/output/sdcard /bin/bash -c "dpkg -i /tmp/ramlog_2.0.0_all.deb"
+sed -e 's/TMPFS_RAMFS_SIZE=/TMPFS_RAMFS_SIZE=256m/g' -i $DEST/output/sdcard/etc/default/ramlog
+sed -e 's/# Required-Start:    $remote_fs $time/# Required-Start:    $remote_fs $time ramlog/g' -i $DEST/output/sdcard/etc/init.d/rsyslog 
+sed -e 's/# Required-Stop:     umountnfs $time/# Required-Stop:     umountnfs $time ramlog/g' -i $DEST/output/sdcard/etc/init.d/rsyslog   
+
+
+chroot $DEST/output/sdcard /bin/bash -c "export TERM=linux" 
 
 # configure MIN / MAX Speed for cpufrequtils
 sed -e 's/MIN_SPEED="0"/MIN_SPEED="480000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
@@ -239,7 +254,7 @@ sed -e 's/MAX_SPEED="0"/MAX_SPEED="1010000"/g' -i $DEST/output/sdcard/etc/init.d
 sed -e 's/ondemand/interactive/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 
 # set password to 1234
-chroot $DEST/output/sdcard /bin/bash -c "(echo 1234;echo 1234;) | passwd root" 
+chroot $DEST/output/sdcard /bin/bash -c "(echo $ROOTPWD;echo $ROOTPWD;) | passwd root" 
 
 # set hostname 
 echo cubie > $DEST/output/sdcard/etc/hostname
@@ -283,6 +298,13 @@ iface br0 inet dhcp
 bridge_ports eth0 wlan0
 hwaddress ether # will be added at first boot
 EOT
+
+# flash media tunning
+sed -e 's/#RAMTMP=no/RAMTMP=yes/g' -i $DEST/output/sdcard/etc/default/tmpfs
+sed -e 's/#RUN_SIZE=10%/RUN_SIZE=128M/g' -i $DEST/output/sdcard/etc/default/tmpfs 
+sed -e 's/#LOCK_SIZE=/LOCK_SIZE=/g' -i $DEST/output/sdcard/etc/default/tmpfs 
+sed -e 's/#SHM_SIZE=/SHM_SIZE=128M/g' -i $DEST/output/sdcard/etc/default/tmpfs 
+sed -e 's/#TMP_SIZE=/TMP_SIZE=1G/g' -i $DEST/output/sdcard/etc/default/tmpfs 
 
 # enable serial console (Debian/sysvinit way)
 echo T0:2345:respawn:/sbin/getty -L ttyS0 115200 vt100 >> $DEST/output/sdcard/etc/inittab
@@ -359,3 +381,6 @@ losetup -d $LOOP
 mv $DEST/output/debian_rootfs.raw $DEST/output/$VGA.raw
 cd $DEST/output/
 zip $VGA.zip $VGA.raw
+end=`date +%s`
+runtime=$((end-start))
+echo "Runtime $runtime sec."
