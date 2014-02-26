@@ -239,8 +239,18 @@ echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen
 chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
 echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
+
+# change dynamic motd
+ZAMENJAJ='echo "" > /var/run/motd.dynamic'
+ZAMENJAJ=$ZAMENJAJ"\n   if [ \$(cat /proc/meminfo | grep MemTotal | grep -o '[0-9]\\\+') -ge 1531749 ]; then"
+ZAMENJAJ=$ZAMENJAJ"\n           toilet -f standard -F metal  \"Cubietruck\" >> /var/run/motd.dynamic"
+ZAMENJAJ=$ZAMENJAJ"\n   else"
+ZAMENJAJ=$ZAMENJAJ"\n           toilet -f standard -F metal  \"Cubieboard\" >> /var/run/motd.dynamic"
+ZAMENJAJ=$ZAMENJAJ"\n   fi"
+ZAMENJAJ=$ZAMENJAJ"\n   }"
+sed -e s,"# Update motd","$ZAMENJAJ",g 	-i $DEST/output/sdcard/etc/init.d/motd
 
 # ramlog
 chroot $DEST/output/sdcard /bin/bash -c "dpkg -i /tmp/ramlog_2.0.0_all.deb"
@@ -248,7 +258,7 @@ sed -e 's/TMPFS_RAMFS_SIZE=/TMPFS_RAMFS_SIZE=256m/g' -i $DEST/output/sdcard/etc/
 sed -e 's/# Required-Start:    $remote_fs $time/# Required-Start:    $remote_fs $time ramlog/g' -i $DEST/output/sdcard/etc/init.d/rsyslog 
 sed -e 's/# Required-Stop:     umountnfs $time/# Required-Stop:     umountnfs $time ramlog/g' -i $DEST/output/sdcard/etc/init.d/rsyslog   
 
-
+# console
 chroot $DEST/output/sdcard /bin/bash -c "export TERM=linux" 
 
 # configure MIN / MAX Speed for cpufrequtils
