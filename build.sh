@@ -136,16 +136,20 @@ echo "------ Partitionning and mounting filesystem"
 # make image bootable
 dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=$LOOP bs=1024 seek=8
 sync
+sleep 3
 # create one partition starting at 2048 which is default
 (echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP >> /dev/null || true
 # just to make sure
+sleep 3
 sync
 partprobe $LOOP
+sleep 3
 sync
 losetup -d $LOOP
 
 # 2048 (start) x 512 (block size) = where to mount partition
 losetup -o 1048576 $LOOP debian_rootfs.raw
+sleep 4
 # create filesystem
 mkfs.ext4 $LOOP
 # create mount point and mount image 
@@ -178,16 +182,8 @@ Debian GNU/Linux 7 $VERSION
 EOT
 
 # update /etc/motd
-cat > $DEST/output/sdcard/etc/motd.custom <<EOF
-              _      _        _                       _    
-  ___  _   _ | |__  (_)  ___ | |_  _ __  _   _   ___ | | __
- / __|| | | || '_ \ | | / _ \| __|| '__|| | | | / __|| |/ /
-| (__ | |_| || |_) || ||  __/| |_ | |   | |_| || (__ |   < 
- \___| \__,_||_.__/ |_| \___| \__||_|    \__,_| \___||_|\_\
-                                                          
-
-EOF
-
+rm $DEST/output/sdcard/etc/motd
+touch $DEST/output/sdcard/etc/motd
 
 # apt list
 cat <<EOT > $DEST/output/sdcard/etc/apt/sources.list
@@ -250,8 +246,9 @@ ZAMENJAJ=$ZAMENJAJ"\n           toilet -f standard -F metal  \"Cubietruck\" >> /
 ZAMENJAJ=$ZAMENJAJ"\n   else"
 ZAMENJAJ=$ZAMENJAJ"\n           toilet -f standard -F metal  \"Cubieboard\" >> /var/run/motd.dynamic"
 ZAMENJAJ=$ZAMENJAJ"\n   fi"
-ZAMENJAJ=$ZAMENJAJ"\n   }"
+ZAMENJAJ=$ZAMENJAJ"\n   echo \"\" >> /var/run/motd.dynamic"
 sed -e s,"# Update motd","$ZAMENJAJ",g 	-i $DEST/output/sdcard/etc/init.d/motd
+sed -e s,"uname -snrvm > /var/run/motd.dynamic","",g  -i $DEST/output/sdcard/etc/init.d/motd
 
 # ramlog
 chroot $DEST/output/sdcard /bin/bash -c "dpkg -i /tmp/ramlog_2.0.0_all.deb"
@@ -361,7 +358,8 @@ make clean && make $CTHREADS 'fex2bin' CC=arm-linux-gnueabihf-gcc && make $CTHRE
 cp fex2bin $DEST/output/sdcard/usr/bin/ 
 cp bin2fex $DEST/output/sdcard/usr/bin/
 cp nand-part $DEST/output/sdcard/usr/bin/
-
+sync
+sleep 5
 # cleanup 
 # unmount proc, sys and dev from chroot
 umount $DEST/output/sdcard/dev/pts
