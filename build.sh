@@ -178,7 +178,7 @@ Debian GNU/Linux 7 $VERSION
 EOT
 
 # update /etc/motd
-cat > $DEST/output/sdcard/etc/motd <<EOF
+cat > $DEST/output/sdcard/etc/motd.custom <<EOF
               _      _        _                       _    
   ___  _   _ | |__  (_)  ___ | |_  _ __  _   _   ___ | | __
  / __|| | | || '_ \ | | / _ \| __|| '__|| | | | / __|| |/ /
@@ -222,8 +222,9 @@ cd $DEST/output/sdcard/etc/init.d
 cp $SRC/scripts/cubian-resize2fs $DEST/output/sdcard/etc/init.d
 cp $SRC/scripts/cubian-firstrun $DEST/output/sdcard/etc/init.d
 
-# script to install to NAND
+# script to install to NAND & SATA
 cp $SRC/scripts/nand-install.sh $DEST/output/sdcard/root
+cp $SRC/scripts/sata-install.sh $DEST/output/sdcard/root
 cp $SRC/bin/nand1-cubietruck-debian-boot.tgz $DEST/output/sdcard/root
 cp $SRC/bin/ramlog_2.0.0_all.deb $DEST/output/sdcard/tmp
 
