@@ -276,6 +276,7 @@ hci_uart
 gpio_sunxi
 bcmdhd
 # if you want access point mode, load wifi module this way: bcmdhd op_mode=2
+# and edit /etc/ini.d/hostapd ; DAEMON_CONF=/etc/hostapd.conf ; hostapd.conf ; reboot
 EOT
 
 # create interfaces configuration
