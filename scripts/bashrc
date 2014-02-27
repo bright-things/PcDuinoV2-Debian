@@ -4,6 +4,12 @@ TEMP=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
 TEMP=$(echo "scale=1;$TEMP/1000" | bc)
 LOAD=$(w | sed -n 1p  | awk '{print $(NF-2), $(NF-1),$(NF-0)}')
 CEL=$(awk 'BEGIN { print "\302\260C"; }')
+HDDTEMP=$(/usr/sbin/hddtemp /dev/sda 2>&1)
+HDDTEMP=$(echo $HDDTEMP | awk '{print $3}')
+if [ "$HDDTEMP" == "drive" ]; then 
+        HDDTEMP="sleeping"
+fi
+HDDFREE=$(df -h /dev/sda1 | grep sda | awk '{ print $4 " free"}')
 echo ""
-echo "Load average: $LOAD - Board temperature: $TEMP$CEL - Free memory: $MEM kb"
+echo "Load: $LOAD - Board temp: $TEMP$CEL - Hard temp: $HDDTEMP - Free memory: $MEM kb"
 echo ""
