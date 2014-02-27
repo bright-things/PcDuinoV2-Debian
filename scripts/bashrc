@@ -1,0 +1,9 @@
+MEM=$(free | sed -n 2p | awk '{print $(NF-3)}')
+MEM=$(echo "$MEM/1024" | bc)
+TEMP=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
+TEMP=$(echo "scale=1;$TEMP/1000" | bc)
+LOAD=$(w | sed -n 1p  | awk '{print $(NF-2), $(NF-1),$(NF-0)}')
+CEL=$(awk 'BEGIN { print "\302\260C"; }')
+echo ""
+echo "Load average: $LOAD - Board temperature: $TEMP$CEL - Free memory: $MEM kb"
+echo ""
