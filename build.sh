@@ -1,6 +1,6 @@
 #!/bin/bash
 # --- Configuration -------------------------------------------------------------
-VERSION="CTDebian 1.7"
+VERSION="CTDebian 1.8"
 SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
@@ -127,7 +127,7 @@ fi
 #--------------------------------------------------------------------------------
 echo "------ Creating SD Images"
 cd $DEST/output
-# create 1Gb image and mount image to next free loop device
+# create 1G image and mount image to next free loop device
 dd if=/dev/zero of=debian_rootfs.raw bs=1M count=1000
 LOOP=$(losetup -f)
 losetup $LOOP debian_rootfs.raw
@@ -152,6 +152,11 @@ losetup -o 1048576 $LOOP debian_rootfs.raw
 sleep 4
 # create filesystem
 mkfs.ext4 $LOOP
+
+# tune filesystem
+tune2fs -o journal_data_writeback $LOOP
+tune2fs -O ^has_journal $LOOP
+
 # create mount point and mount image 
 mkdir -p $DEST/output/sdcard/
 mount -t ext4 $LOOP $DEST/output/sdcard/
@@ -224,6 +229,8 @@ cp $SRC/scripts/sata-install.sh $DEST/output/sdcard/root
 cp $SRC/bin/nand1-cubietruck-debian-boot.tgz $DEST/output/sdcard/root
 cp $SRC/bin/ramlog_2.0.0_all.deb $DEST/output/sdcard/tmp
 
+# install custom bashrc
+cp $SRC/scripts/bashrc $DEST/output/sdcard/root/.bashrc
 
 # make it executable
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
@@ -236,7 +243,7 @@ echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen
 chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
 echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
 
 # change dynamic motd
@@ -261,7 +268,7 @@ chroot $DEST/output/sdcard /bin/bash -c "export TERM=linux"
 
 # configure MIN / MAX Speed for cpufrequtils
 sed -e 's/MIN_SPEED="0"/MIN_SPEED="480000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
-sed -e 's/MAX_SPEED="0"/MAX_SPEED="1010000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
+sed -e 's/MAX_SPEED="0"/MAX_SPEED="1250000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 sed -e 's/ondemand/interactive/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 
 # set password to 1234
@@ -311,6 +318,9 @@ bridge_ports eth0 wlan0
 hwaddress ether # will be added at first boot
 EOT
 
+# add noatime to root FS
+echo "/dev/mmcblk0p1  /           ext4    defaults,noatime,commit=300,errors=remount-ro        0       0" >> $DEST/output/sdcard/etc/fstab
+
 # flash media tunning
 sed -e 's/#RAMTMP=no/RAMTMP=yes/g' -i $DEST/output/sdcard/etc/default/tmpfs
 sed -e 's/#RUN_SIZE=10%/RUN_SIZE=128M/g' -i $DEST/output/sdcard/etc/default/tmpfs 
@@ -344,8 +354,8 @@ chmod +x $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd
 cp $DEST/usb-redirector-linux-arm-eabi/files/usb* $DEST/output/sdcard/usr/local/bin/ 
 cp $DEST/usb-redirector-linux-arm-eabi/files/modules/src/tusbd/tusbd.ko $DEST/output/sdcard/usr/local/bin/ 
 cp $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd $DEST/output/sdcard/etc/init.d/
-# started by default ----- update.rc rc.usbsrvd defaults
-chroot $DEST/output/sdcard /bin/bash -c "update-rc.d rc.usbsrvd defaults"
+# not started by default ----- update.rc rc.usbsrvd defaults
+# chroot $DEST/output/sdcard /bin/bash -c "update-rc.d rc.usbsrvd defaults"
 
 # hostapd from testing binary replace.
 cd $DEST/output/sdcard/usr/sbin/
