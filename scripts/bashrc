@@ -1,3 +1,4 @@
+if [ ${TERM} != "dumb" ]; then
 MEM=$(free | sed -n 2p | awk '{print $(NF-3)}')
 MEM=$(echo "$MEM/1024" | bc)
 TEMP=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
@@ -13,3 +14,4 @@ HDDFREE=$(df -h /dev/sda1 | grep sda | awk '{ print $4 " free"}')
 echo ""
 echo "Load: $LOAD - Board temp: $TEMP$CEL - Hard temp: $HDDTEMP - Free memory: $MEM kb"
 echo ""
+fi
