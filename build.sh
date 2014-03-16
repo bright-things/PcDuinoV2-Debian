@@ -282,6 +282,8 @@ cat <<EOT >> $DEST/output/sdcard/etc/modules
 hci_uart
 gpio_sunxi
 bcmdhd
+rfcomm
+hidp
 # if you want access point mode, load wifi module this way: bcmdhd op_mode=2
 # and edit /etc/init.d/hostapd change DAEMON_CONF=/etc/hostapd.conf ; edit your wifi net settings in hostapd.conf ; reboot
 EOT
