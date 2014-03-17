@@ -154,8 +154,8 @@ sleep 4
 mkfs.ext4 $LOOP
 
 # tune filesystem
-tune2fs -o journal_data_writeback $LOOP
-tune2fs -O ^has_journal $LOOP
+#tune2fs -o journal_data_writeback $LOOP
+#tune2fs -O ^has_journal $LOOP
 
 # create mount point and mount image 
 mkdir -p $DEST/output/sdcard/
