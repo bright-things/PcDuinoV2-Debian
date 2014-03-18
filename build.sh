@@ -154,8 +154,7 @@ sleep 4
 mkfs.ext4 $LOOP
 
 # tune filesystem
-#tune2fs -o journal_data_writeback $LOOP
-#tune2fs -O ^has_journal $LOOP
+tune2fs -o journal_data_writeback $LOOP
 
 # create mount point and mount image 
 mkdir -p $DEST/output/sdcard/
@@ -321,7 +320,7 @@ hwaddress ether # will be added at first boot
 EOT
 
 # add noatime to root FS
-echo "/dev/mmcblk0p1  /           ext4    defaults,noatime,commit=300,errors=remount-ro        0       0" >> $DEST/output/sdcard/etc/fstab
+echo "/dev/mmcblk0p1  /           ext4    defaults,noatime,data=writeback,commit=600,errors=remount-ro        0       0" >> $DEST/output/sdcard/etc/fstab
 
 # flash media tunning
 sed -e 's/#RAMTMP=no/RAMTMP=yes/g' -i $DEST/output/sdcard/etc/default/tmpfs
