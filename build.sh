@@ -301,7 +301,7 @@ cat <<EOT >> $DEST/output/sdcard/etc/network/interfaces
 auto eth0
 allow-hotplug eth0
 iface eth0 inet dhcp
-        hwaddress ether # will be added at first boot
+#        hwaddress ether # if you want to set MAC manually
 #        pre-up /sbin/ifconfig eth0 mtu 3838 # setting MTU for DHCP, static just: mtu 3838
 #auto wlan0
 #allow-hotplug wlan0
