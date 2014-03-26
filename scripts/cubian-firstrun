@@ -64,12 +64,7 @@ case "$1" in
                 dpkg-reconfigure openssh-server
 		set +e
 		echo "Creating local sources list"
-		if [[ $(ping -c1 -w1 google.com) ]]
-		then	
-			netselect-apt -s -n -o /etc/apt/sources.list >&/dev/null
-		else
-    			echo "Error. Using defaults."
-		fi
+		netselect-apt -s -n -o /etc/apt/sources.list >&/dev/null
 		echo "Expanding rootfs..."
 		if do_expand_rootfs;then
 			echo "Exanding rootfs success, reboot automatically"
