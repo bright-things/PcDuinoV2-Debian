@@ -75,7 +75,7 @@ fi
 
 # Applying Patch for I2S
 cd $DEST/linux-sunxi/ 
-patch -p0 < $SRC/patch/0001-I2S-module-rework.patch
+patch -p1 < $SRC/patch/0001-I2S-module-rework.patch
 
 # Applying Patch for high load. Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
