@@ -67,8 +67,7 @@ else
 	git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
 fi
 
-# Applying Patch for 2gb memory
-# patch -f $DEST/u-boot-sunxi/include/configs/sunxi-common.h < $SRC/patch/memory.patch || true
+if [ "$SOURCE_COMPILE" = "yes" ]; then
 
 # Applying Patch for gpio
 #patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < $SRC/patch/gpio.patch || true
@@ -107,7 +106,7 @@ fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/ct-vga.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $DEST/output/ct-hdmi.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-hdmi.fex $DEST/output/cb2-hdmi.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex $DEST/output/cb2-vga.bin
-if [ "$SOURCE_COMPILE" = "yes" ]; then
+
 # kernel image
 echo "------ Compiling kernel"
 cd $DEST/linux-sunxi
