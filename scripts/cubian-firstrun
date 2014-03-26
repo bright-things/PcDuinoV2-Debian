@@ -64,7 +64,7 @@ case "$1" in
                 dpkg-reconfigure openssh-server
 		set +e
 		echo "Creating local sources list"
-		netselect-apt -s -n -o /etc/apt/sources.list >&/dev/null
+		netselect-apt -s -n -o /etc/apt/sources.list >/dev/null 2>&1
 		echo "Expanding rootfs..."
 		if do_expand_rootfs;then
 			echo "Exanding rootfs success, reboot automatically"
