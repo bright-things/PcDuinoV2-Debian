@@ -61,8 +61,8 @@ case "$1" in
                 sed -e 's/ether/ether '$NEWMAC'/g' -i /etc/network/interfaces
                 sed -e 's/ether/ether '$NEWMAC'/g' -i /etc/network/interfaces.hostapd
                 # more output to console only in first run then to serial
-                sed -e 's/extraargs=console=tty0/extraargs=console=ttyS0,115200/g' -i /boot/uEnv.ct
-                sed -e 's/extraargs=console=tty0/extraargs=console=ttyS0,115200/g' -i /boot/uEnv.cb2
+                # sed -e 's/extraargs=console=tty0/extraargs=console=ttyS0,115200/g' -i /boot/uEnv.ct
+                # sed -e 's/extraargs=console=tty0/extraargs=console=ttyS0,115200/g' -i /boot/uEnv.cb2
 	        rm /etc/ssh/ssh_host*
                 dpkg-reconfigure openssh-server
 		set +e
