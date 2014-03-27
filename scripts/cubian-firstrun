@@ -66,15 +66,15 @@ case "$1" in
 	        rm /etc/ssh/ssh_host*
                 dpkg-reconfigure openssh-server
 		set +e
-		echo "Creating local sources list"
+		echo "Creating local sources list..." >> /dev/tty0
 		netselect-apt -s -n -o /etc/apt/sources.list >/dev/null 2>&1
-		echo "Expanding rootfs..."
+		echo "Expanding rootfs..." >> /dev/tty0
 		if do_expand_rootfs;then
-			echo "Exanding rootfs success, reboot automatically"
+			echo "Exanding rootfs success, reboot automatically." >> /dev/tty0
 			/sbin/insserv cubian-resize2fs
 	    	reboot=true
 		else
-			echo "Exanding rootfs has failed, see previous error messages"
+			echo "Exanding rootfs has failed, see log files." >> /dev/tty0
 		fi
 		set -e
 		/sbin/insserv -r cubian-firstrun
