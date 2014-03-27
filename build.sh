@@ -214,11 +214,17 @@ END
 
 # script to turn off the LED blinking
 cp $SRC/scripts/disable_led.sh $DEST/output/sdcard/etc/init.d/disable_led.sh
-
 # make it executable
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/disable_led.sh"
 # and startable on boot
 chroot $DEST/output/sdcard /bin/bash -c "update-rc.d disable_led.sh defaults" 
+
+# script to show boot splash
+cp $SRC/scripts/bootsplash $DEST/output/sdcard/etc/init.d/bootsplash
+# make it executable
+chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/bootsplash"
+# and startable on boot
+chroot $DEST/output/sdcard /bin/bash -c "update-rc.d bootsplash defaults" 
 
 # scripts for autoresize at first boot from cubian
 cd $DEST/output/sdcard/etc/init.d
