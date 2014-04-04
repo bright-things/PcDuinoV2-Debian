@@ -1,11 +1,11 @@
 #!/bin/bash
 # --- Configuration -------------------------------------------------------------
-VERSION="DomotiDebian 1.0"
+VERSION="CTDebian 1.8"
 SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
 DEST=/tmp/Cubie
-ROOTPWD="kung-fu"
+ROOTPWD="1234"
 # --- End -----------------------------------------------------------------------
 SRC=$(pwd)
 set -e
@@ -285,10 +285,10 @@ chroot $DEST/output/sdcard /bin/bash -c "(echo $ROOTPWD;echo $ROOTPWD;) | passwd
 # set hostname 
 echo cubie > $DEST/output/sdcard/etc/hostname
 
-# change default I/O scheduler, noop for flash media, cfq for mechanical drive
+# change default I/O scheduler, noop for flash media and SSD, cfq for mechanical drive
 cat <<EOT >> $DEST/output/sdcard/etc/sysfs.conf
 block/mmcblk0/queue/scheduler = noop
-block/sda/queue/scheduler = noop
+block/sda/queue/scheduler = cfq
 EOT
 
 # load modules

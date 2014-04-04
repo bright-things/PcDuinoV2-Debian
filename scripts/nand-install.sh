@@ -102,7 +102,7 @@ echo "Creating NAND rootfs ... up to 5 min"
 mount /dev/nand2 /mnt
 rsync -aH --exclude-from=.install-exclude  /  /mnt
 umount /mnt
-echo "All done. Press a key to power off, than remove SD and boot from NAND"
+echo "All done. Press a key to power off, then remove SD to boot from NAND"
 rm $FLAG
 rm .install-exclude
 read konec

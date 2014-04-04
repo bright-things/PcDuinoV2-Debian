@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Confgiruation
+# Configuration
 
 DEST=/dev/sda1
 FORMAT=yes
