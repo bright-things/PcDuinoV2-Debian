@@ -70,11 +70,11 @@ case "$1" in
 		netselect-apt -s -n -o /etc/apt/sources.list >/dev/null 2>&1
 		echo "Expanding rootfs..." >> /dev/tty0
 		if do_expand_rootfs;then
-			echo "Exanding rootfs success, reboot automatically." >> /dev/tty0
+			echo "Expanding rootfs success, rebooting automatically." >> /dev/tty0
 			/sbin/insserv cubian-resize2fs
 	    	reboot=true
 		else
-			echo "Exanding rootfs has failed, see log files." >> /dev/tty0
+			echo "Expanding rootfs has failed, see log files." >> /dev/tty0
 		fi
 		set -e
 		/sbin/insserv -r cubian-firstrun
