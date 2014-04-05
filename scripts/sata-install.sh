@@ -61,6 +61,8 @@ sed -e 's,root=\/dev\/mmcblk0p1,root='"$DEST"',g' -i /boot/uEnv.cb2
 
 echo "Creating hard drive rootfs ... up to 5 min"
 rsync -aH --exclude-from=.install-exclude  /  /mnt
+# change fstab
+sed -e 's,\/dev\/mmcblk0p1,'"$DEST"',g' -i /mnt/etc/fstab
 umount /mnt
 figlet -f banner "warning"
 echo "All done. Press a key to reboot! System needs SD card for boot process! Can't boot directly from hard drive"
