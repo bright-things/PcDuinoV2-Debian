@@ -15,6 +15,7 @@ cat > .install-exclude <<EOF
 /run/*
 /tmp/*
 /boot/*
+/root/nand-install.sh
 EOF
 
 exec 2>/dev/null
@@ -65,14 +66,14 @@ echo "Formatting and optimizing NAND rootfs ... up to 30 sec"
 mkfs.vfat /dev/nand1 >> /dev/null
 mkfs.ext4 /dev/nand2 >> /dev/null
 tune2fs -o journal_data_writeback /dev/nand2 >> /dev/null
-tune2fs -O ^has_journal /dev/nand2 >> /dev/null
+# tune2fs -O ^has_journal /dev/nand2 >> /dev/null
 e2fsck -f /dev/nand2
 
 echo "Creating NAND bootfs ... few seconds"
 mount /dev/nand1 /mnt
 tar xfz nand1-cubietruck-debian-boot.tgz -C /mnt/
-rm nand1-cubietruck-debian-boot.tgz
-rm nand_mbr.backup
+#rm nand1-cubietruck-debian-boot.tgz
+#rm nand_mbr.backup
 
 # choose proper kernel configuration for CB2 or CT 
 if [ $(cat /proc/meminfo | grep MemTotal | grep -o '[0-9]\+') -ge 1531749 ]; then
@@ -101,6 +102,8 @@ umount /mnt
 echo "Creating NAND rootfs ... up to 5 min"
 mount /dev/nand2 /mnt
 rsync -aH --exclude-from=.install-exclude  /  /mnt
+# change fstab
+sed -e 's/mmcblk0p1/nand2/g' -i /mnt/etc/fstab
 umount /mnt
 echo "All done. Press a key to power off, than remove SD and boot from NAND"
 rm $FLAG
