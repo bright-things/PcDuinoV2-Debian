@@ -105,7 +105,7 @@ rsync -aH --exclude-from=.install-exclude  /  /mnt
 # change fstab
 sed -e 's/mmcblk0p1/nand2/g' -i /mnt/etc/fstab
 umount /mnt
-echo "All done. Press a key to power off, than remove SD and boot from NAND"
+echo "All done. Press a key to power off, then remove SD to boot from NAND"
 rm $FLAG
 rm .install-exclude
 read konec

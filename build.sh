@@ -285,7 +285,7 @@ chroot $DEST/output/sdcard /bin/bash -c "(echo $ROOTPWD;echo $ROOTPWD;) | passwd
 # set hostname 
 echo cubie > $DEST/output/sdcard/etc/hostname
 
-# change default I/O scheduler, noop for flash media, cfq for mechanical drive
+# change default I/O scheduler, noop for flash media and SSD, cfq for mechanical drive
 cat <<EOT >> $DEST/output/sdcard/etc/sysfs.conf
 block/mmcblk0/queue/scheduler = noop
 block/sda/queue/scheduler = cfq
