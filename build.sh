@@ -162,7 +162,9 @@ tune2fs -o journal_data_writeback $LOOP
 # create mount point and mount image 
 mkdir -p $DEST/output/sdcard/
 mount -t ext4 $LOOP $DEST/output/sdcard/
-mount
+
+# make sure the filesystem is mounted
+while ! lsof | grep $LOOP &>/dev/null; do :; done
 
 echo "------ Install basic filesystem"
 # install base system
@@ -347,11 +349,14 @@ sed -e 's/#TMP_SIZE=/TMP_SIZE=1G/g' -i $DEST/output/sdcard/etc/default/tmpfs
 # enable serial console (Debian/sysvinit way)
 echo T0:2345:respawn:/sbin/getty -L ttyS0 115200 vt100 >> $DEST/output/sdcard/etc/inittab
 
+# copy kernel, modules, firmware, headers, board config, kernel conf
 cp $DEST/output/uEnv.* $DEST/output/sdcard/boot/
 cp $DEST/output/*.bin $DEST/output/sdcard/boot/
 cp $DEST/linux-sunxi/arch/arm/boot/uImage $DEST/output/sdcard/boot/
 cp -R $DEST/linux-sunxi/output/lib/modules $DEST/output/sdcard/lib/
 cp -R $DEST/linux-sunxi/output/lib/firmware/ $DEST/output/sdcard/lib/
+cp -R $DEST/linux-sunxi/output/include/ $DEST/output/sdcard/usr/
+
 
 # USB redirector tools http://www.incentivespro.com
 cd $DEST
