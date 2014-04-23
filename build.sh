@@ -69,14 +69,19 @@ fi
 
 if [ "$SOURCE_COMPILE" = "yes" ]; then
 
-# Applying Patch for gpio
-#patch -f $DEST/linux-sunxi/drivers/gpio/gpio-sunxi.c < $SRC/patch/gpio.patch || true
-
 # Applying Patch for I2S
 cd $DEST/linux-sunxi/ 
 patch -p1 < $SRC/patch/0001-I2S-module-rework.patch
 
-# Applying Patch for high load. Could cause troubles with USB OTG port
+# Applying Patch for VLAN
+cd $DEST/linux-sunxi/ 
+patch -p1 < $SRC/patch/vlan.patch
+
+# Applying Patch for Clustering 
+cd $DEST/linux-sunxi/ 
+patch -p1 < $SRC/patch/patch-3.4-ja1.diff
+
+# Applying Patch for "high load". Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex
 
@@ -162,9 +167,6 @@ tune2fs -o journal_data_writeback $LOOP
 # create mount point and mount image 
 mkdir -p $DEST/output/sdcard/
 mount -t ext4 $LOOP $DEST/output/sdcard/
-
-# make sure the filesystem is mounted
-while ! lsof | grep $LOOP &>/dev/null; do :; done
 
 echo "------ Install basic filesystem"
 # install base system
@@ -394,14 +396,14 @@ sync
 sleep 5
 # cleanup 
 # unmount proc, sys and dev from chroot
-umount $DEST/output/sdcard/dev/pts
-umount $DEST/output/sdcard/dev
-umount $DEST/output/sdcard/proc
-umount $DEST/output/sdcard/sys
+umount -l $DEST/output/sdcard/dev/pts
+umount -l $DEST/output/sdcard/dev
+umount -l $DEST/output/sdcard/proc
+umount -l $DEST/output/sdcard/sys
 
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
-umount $DEST/output/sdcard/ 
+umount -l $DEST/output/sdcard/ 
 losetup -d $LOOP
 
 # let's create nice file name
@@ -420,7 +422,7 @@ losetup -o 1048576 $LOOP $DEST/output/debian_rootfs.raw
 mount $LOOP $DEST/output/sdcard/
 sed -e 's/ct-hdmi.bin/ct-vga.bin/g' -i $DEST/output/sdcard/boot/uEnv.ct
 sed -e 's/cb2-hdmi.bin/cb2-vga.bin/g' -i $DEST/output/sdcard/boot/uEnv.cb2
-umount $DEST/output/sdcard/ 
+umount -l $DEST/output/sdcard/ 
 losetup -d $LOOP
 mv $DEST/output/debian_rootfs.raw $DEST/output/$VGA.raw
 cd $DEST/output/
