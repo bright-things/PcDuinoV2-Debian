@@ -79,7 +79,7 @@ patch -p1 < $SRC/patch/vlan.patch
 
 # Applying Patch for Clustering 
 cd $DEST/linux-sunxi/ 
-patch -p1 < $SRC/patch/patch-3.4-ja1.diff
+patch -p1 < $SRC/patch/clustering-patch-3.4-ja1.patch
 
 # Applying Patch for "high load". Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
