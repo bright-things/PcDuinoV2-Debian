@@ -1,6 +1,6 @@
 #!/bin/bash
 # --- Configuration -------------------------------------------------------------
-VERSION="CTDebian 1.8"
+VERSION="CTDebian 1.9"
 SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
