@@ -11,7 +11,10 @@ CEL=$(awk 'BEGIN { print "\302\260C"; }')
 if [ -e '/dev/sda' ]; then
    HDDTEMP=$(/usr/sbin/hddtemp /dev/sda 2>&1)
    HDDTEMP=$(echo $HDDTEMP | awk '{print $NF}')
-   HDDFREE=$(df -h /dev/sda1 | grep sda | awk '{ print " / " $(NF-2)}')b   
+   HDDFREE=$(df -h /dev/sda1 | grep sda | awk '{ print " / " $(NF-2)}')
+   if [ "${HDDFREE}" != "" ]; then
+      HDDFREE="$HDDFREE"b
+   fi
    HDDOUT="- Drive: $HDDTEMP$HDDFREE "
 fi
 
