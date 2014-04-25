@@ -74,8 +74,8 @@ cd $DEST/linux-sunxi/
 patch -p1 < $SRC/patch/0001-I2S-module-rework.patch
 
 # Applying Patch for VLAN
-cd $DEST/linux-sunxi/ 
-patch -p1 < $SRC/patch/vlan.patch
+#cd $DEST/linux-sunxi/ 
+#patch -p1 < $SRC/patch/vlan.patch
 
 # Applying Patch for Clustering 
 cd $DEST/linux-sunxi/ 
