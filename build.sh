@@ -66,6 +66,13 @@ else
 	# git clone https://github.com/cubieboard/linux-sunxi/ $DEST/linux-sunxi # Kernel 3.4.61+
 	git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
 fi
+if [ -d "$DEST/sunxi-lirc" ]
+then
+	cd $DEST/sunxi-lirc; git pull -f; cd $SRC
+else
+	git clone https://github.com/matzrh/sunxi-lirc $DEST/sunxi-lirc # Lirc RX and TX functionality for Allwinner A1X and A20 chips
+fi
+
 
 if [ "$SOURCE_COMPILE" = "yes" ]; then
 
@@ -73,9 +80,10 @@ if [ "$SOURCE_COMPILE" = "yes" ]; then
 cd $DEST/linux-sunxi/ 
 patch -p1 < $SRC/patch/0001-I2S-module-rework.patch
 
-# Applying Patch for VLAN
-#cd $DEST/linux-sunxi/ 
-#patch -p1 < $SRC/patch/vlan.patch
+# Applying Patch for Lirc
+cd $DEST/linux-sunxi/
+cp $DEST/sunxi-lirc/*.c $DEST/linux-sunxi/drivers/staging/media/lirc/ 
+patch -p1 < $DEST/sunxi-lirc/install_staging.patch
 
 # Applying Patch for Clustering 
 cd $DEST/linux-sunxi/ 
@@ -255,7 +263,7 @@ echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen
 chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
 echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install lirc alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
 
 # change dynamic motd
