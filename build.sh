@@ -82,7 +82,7 @@ patch -p1 < $SRC/patch/0001-I2S-module-rework.patch
 
 # Applying Patch for Lirc
 cd $DEST/linux-sunxi/
-cp $DEST/sunxi-lirc/*.c $DEST/linux-sunxi/drivers/staging/media/lirc/ 
+cp $DEST/sunxi-lirc/*.c $DEST/linux-sunxi/drivers/staging/media/lirc/
 patch -p1 < $DEST/sunxi-lirc/install_staging.patch
 
 # Applying Patch for Clustering 
@@ -277,6 +277,10 @@ ZAMENJAJ=$ZAMENJAJ"\n   echo \"\" >> /var/run/motd.dynamic"
 sed -e s,"# Update motd","$ZAMENJAJ",g 	-i $DEST/output/sdcard/etc/init.d/motd
 sed -e s,"uname -snrvm > /var/run/motd.dynamic","",g  -i $DEST/output/sdcard/etc/init.d/motd
 
+# copy lirc configuration
+cp $DEST/sunxi-lirc/lirc_init_files/hardware.conf $DEST/output/sdcard/etc/lirc
+cp $DEST/sunxi-lirc/lirc_init_files/init.d_lirc $DEST/output/sdcard/etc/init.d/lirc
+
 # ramlog
 chroot $DEST/output/sdcard /bin/bash -c "dpkg -i /tmp/ramlog_2.0.0_all.deb"
 sed -e 's/TMPFS_RAMFS_SIZE=/TMPFS_RAMFS_SIZE=256m/g' -i $DEST/output/sdcard/etc/default/ramlog
@@ -310,6 +314,8 @@ gpio_sunxi
 bcmdhd
 rfcomm
 hidp
+lirc_gpio
+sunxi_lirc
 # if you want access point mode, load wifi module this way: bcmdhd op_mode=2
 # and edit /etc/init.d/hostapd change DAEMON_CONF=/etc/hostapd.conf ; edit your wifi net settings in hostapd.conf ; reboot
 EOT
