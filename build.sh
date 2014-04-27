@@ -415,20 +415,25 @@ umount -l $DEST/output/sdcard/dev
 umount -l $DEST/output/sdcard/proc
 umount -l $DEST/output/sdcard/sys
 
-rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
-# umount images 
-umount -l $DEST/output/sdcard/ 
-losetup -d $LOOP
-
 # let's create nice file name
 VERSION="${VERSION/ /_}"
 VGA=$VERSION"_vga"
 HDMI=$VERSION"_hdmi"
 #####
 
+# create kernel + modules + headers + firmare
+cd $DEST/output/sdcard
+tar cvPfz $DEST/output/$VERSION_kernel_mod_head_fw.tgz -T $SRC/config/file.list
+
+rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
+# umount images 
+umount -l $DEST/output/sdcard/ 
+losetup -d $LOOP
+
 cp $DEST/output/debian_rootfs.raw $DEST/output/$HDMI.raw
 cd $DEST/output/
 zip $HDMI.zip $HDMI.raw
+rm $HDMI.raw
 
 # let's create VGA version
 LOOP=$(losetup -f)
@@ -441,6 +446,7 @@ losetup -d $LOOP
 mv $DEST/output/debian_rootfs.raw $DEST/output/$VGA.raw
 cd $DEST/output/
 zip $VGA.zip $VGA.raw
+rm $VGA.raw
 end=`date +%s`
 runtime=$((end-start))
 echo "Runtime $runtime sec."
