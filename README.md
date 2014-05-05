@@ -3,7 +3,7 @@ Cubietruck-Debian
 
 Scripts to create an Image of Debian or only kernel for Cubieboard 2 and Cubietruck
 
-Images, manual and history :
+Images, manual and history:
 
 http://www.igorpecovnik.com/2013/12/24/cubietruck-debian-wheezy-sd-card-image/
 
