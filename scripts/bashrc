@@ -1,24 +1,40 @@
-if [ ${TERM} != "dumb" ]; then
-MEMFREE=$(free | sed -n 2p | awk '{print $(NF-3)}')
-MEMBUFFERS=$(free | sed -n 2p | awk '{print $(NF-1)}')
-MEMCACHED=$(free | sed -n 2p | awk '{print $(NF)}')
-MEM=$(echo "($MEMFREE+$MEMBUFFERS+$MEMCACHED)/1024" | bc)
-TEMP=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
-TEMP=$(echo "scale=1;$TEMP/1000" | bc)
+if [ ${TERM} == "dumb" ]; then
+    exit 0
+fi
+
+
+OUT=""
 LOAD=$(w | sed -n 1p  | awk '{print $(NF-2), $(NF-1),$(NF-0)}')
+OUT="${OUT}Load: ${LOAD} "
+
+
+TEMP=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
+TEMP=$(echo "scale=1;${TEMP}/1000" | bc)  
 CEL=$(awk 'BEGIN { print "\302\260C"; }')
+OUT="${OUT}- Board: ${TEMP}${CEL} "
+
+
 # if we have a hard drive
 if [ -e '/dev/sda' ]; then
    HDDTEMP=$(/usr/sbin/hddtemp /dev/sda 2>&1)
-   HDDTEMP=$(echo $HDDTEMP | awk '{print $NF}')
-   HDDFREE=$(df -h /dev/sda1 | grep sda | awk '{ print " / " $(NF-2)}')
-   if [ "${HDDFREE}" != "" ]; then
-      HDDFREE="$HDDFREE"b
+   if [ $? -eq 0 ]; then
+       HDDTEMP=$(echo ${HDDTEMP} | awk '{print $NF}')
+       HDDFREE=$(df -h /dev/sda1 | grep sda | awk '{ print " / " $(NF-2)}')
+       if [ "${HDDFREE}" != "" ]; then
+          HDDFREE="${HDDFREE}"b
+       fi
+       OUT="${OUT}- Drive: ${HDDTEMP}${HDDFREE} "
    fi
-   HDDOUT="- Drive: $HDDTEMP$HDDFREE "
 fi
 
+
+MEMFREE=$(free | sed -n 2p | awk '{print $(NF-3)}')
+MEMBUFFERS=$(free | sed -n 2p | awk '{print $(NF-1)}')
+MEMCACHED=$(free | sed -n 2p | awk '{print $(NF)}')
+MEM=$(echo "(${MEMFREE}+${MEMBUFFERS}+${MEMCACHED})/1024" | bc)
+OUT="${OUT}- Memory: ${MEM}Mb"
+
+
 echo ""
-echo "Load: $LOAD - Board: $TEMP$CEL $HDDOUT- Memory: $MEM""Mb"
+echo ${OUT}
 echo ""
-fi
