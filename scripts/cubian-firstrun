@@ -69,6 +69,7 @@ case "$1" in
 		echo "Creating local sources list..." >> /dev/tty0
 		netselect-apt -s -n -o /etc/apt/sources.list >/dev/null 2>&1
 		apt-get update >/dev/null 2>&1
+		apt-get -y upgrade >/dev/null 2>&1
 		echo "Expanding rootfs..." >> /dev/tty0
 		if do_expand_rootfs;then
 			echo "Expanding rootfs success, rebooting automatically." >> /dev/tty0
