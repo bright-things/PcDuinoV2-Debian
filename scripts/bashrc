@@ -1,5 +1,5 @@
 if [ ${TERM} == "dumb" ]; then
-    exit 0
+    return
 fi
 
 
