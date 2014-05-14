@@ -76,6 +76,9 @@ fi
 
 if [ "$SOURCE_COMPILE" = "yes" ]; then
 
+# Applying Patch for CB2 stability
+sed -e 's/.clock = 480/.clock = 432/g' -i $DEST/u-boot-sunxi/board/sunxi/dram_cubieboard2.c 
+
 # Applying Patch for I2S
 cd $DEST/linux-sunxi/ 
 patch -p1 < $SRC/patch/0001-I2S-module-rework.patch
