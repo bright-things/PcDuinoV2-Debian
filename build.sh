@@ -176,6 +176,9 @@ mkfs.ext4 $LOOP
 # tune filesystem
 tune2fs -o journal_data_writeback $LOOP
 
+# label it
+e2label $LOOP "Debian"
+
 # create mount point and mount image 
 mkdir -p $DEST/output/sdcard/
 mount -t ext4 $LOOP $DEST/output/sdcard/
@@ -387,6 +390,11 @@ cp -R $DEST/linux-sunxi/output/lib/modules $DEST/output/sdcard/lib/
 cp -R $DEST/linux-sunxi/output/lib/firmware/ $DEST/output/sdcard/lib/
 cp -R $DEST/linux-sunxi/output/include/ $DEST/output/sdcard/usr/
 
+# copy Module.symvers
+cp $DEST/linux-sunxi/Module.symvers $DEST/output/sdcard/usr/include
+
+# remove false links to the kernel source
+find $DEST/output/sdcard/lib -type l -exec rm -f {} \;
 
 # USB redirector tools http://www.incentivespro.com
 cd $DEST
