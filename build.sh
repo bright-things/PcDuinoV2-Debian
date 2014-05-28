@@ -394,7 +394,7 @@ cp -R $DEST/linux-sunxi/output/include/ $DEST/output/sdcard/usr/
 cp $DEST/linux-sunxi/Module.symvers $DEST/output/sdcard/usr/include
 
 # remove false links to the kernel source
-find $DEST/output/sdcard/lib -type l -exec rm -f {} \;
+# find $DEST/output/sdcard/lib -type l -exec rm -f {} \;
 
 # USB redirector tools http://www.incentivespro.com
 cd $DEST
