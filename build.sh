@@ -258,7 +258,8 @@ cp $SRC/bin/nand1-cubietruck-debian-boot.tgz $DEST/output/sdcard/root
 cp $SRC/bin/ramlog_2.0.0_all.deb $DEST/output/sdcard/tmp
 
 # install custom bashrc
-cp $SRC/scripts/bashrc $DEST/output/sdcard/root/.bashrc
+#cp $SRC/scripts/bashrc $DEST/output/sdcard/root/.bashrc
+cat $SRC/scripts/bashrc >> $DEST/output/sdcard/etc/bash.bashrc 
 
 # make it executable
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
