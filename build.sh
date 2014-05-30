@@ -273,6 +273,7 @@ echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' 
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install bluetooth lirc alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -y clean"
 
 # change dynamic motd
 ZAMENJAJ='echo "" > /var/run/motd.dynamic'
@@ -447,7 +448,7 @@ HDMI=$VERSION"_hdmi"
 sleep 5
 # create kernel + modules + headers + firmare
 cd $DEST/output/sdcard
-tar cvPfz $DEST/output/$VERSION_kernel_mod_head_fw.tgz -T $SRC/config/file.list
+tar cvPfz $DEST"/output/"$VERSION"_kernel_mod_head_fw.tgz" -T $SRC/config/file.list
 sleep 5
 
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
