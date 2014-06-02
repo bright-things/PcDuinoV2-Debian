@@ -305,6 +305,13 @@ sed -e 's/MIN_SPEED="0"/MIN_SPEED="480000"/g' -i $DEST/output/sdcard/etc/init.d/
 sed -e 's/MAX_SPEED="0"/MAX_SPEED="1200000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 sed -e 's/ondemand/interactive/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 
+# eth0 should run on a dedicated processor
+sed -e 's/exit 0//g' -i /etc/rc.local
+cat >> /etc/rc.local <<"EOF"
+echo 2 > /proc/irq/$(cat /proc/interrupts | grep eth0 | cut -f 1 -d ":" )/smp_affinity
+exit 0
+EOF
+
 # set password to 1234
 chroot $DEST/output/sdcard /bin/bash -c "(echo $ROOTPWD;echo $ROOTPWD;) | passwd root" 
 
