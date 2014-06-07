@@ -82,17 +82,17 @@ if [ "$SOURCE_COMPILE" = "yes" ]; then
 sed -e 's/.clock = 480/.clock = 432/g' -i $DEST/u-boot-sunxi/board/sunxi/dram_cubieboard2.c 
 
 # Applying Patch for I2S
-cd $DEST/linux-sunxi/ 
-patch -p1 < $SRC/patch/0001-I2S-module-rework.patch
+#cd $DEST/linux-sunxi/ 
+#patch -p1 < $SRC/patch/0001-I2S-module-rework.patch
 
 # Applying Patch for Lirc
-cd $DEST/linux-sunxi/
-cp $DEST/sunxi-lirc/*.c $DEST/linux-sunxi/drivers/staging/media/lirc/
-patch -p1 < $DEST/sunxi-lirc/install_staging.patch
+#cd $DEST/linux-sunxi/
+#cp $DEST/sunxi-lirc/*.c $DEST/linux-sunxi/drivers/staging/media/lirc/
+#patch -p1 < $DEST/sunxi-lirc/install_staging.patch
 
 # Applying Patch for Clustering 
-cd $DEST/linux-sunxi/ 
-patch -p1 < $SRC/patch/clustering-patch-3.4-ja1.patch
+#cd $DEST/linux-sunxi/ 
+#patch -p1 < $SRC/patch/clustering-patch-3.4-ja1.patch
 
 # Applying Patch for "high load". Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
