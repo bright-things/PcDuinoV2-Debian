@@ -343,6 +343,7 @@ rfcomm
 hidp
 lirc_gpio
 sunxi_lirc
+# sunxi_ss # Allwinner Security System cryptographic accelerator
 # if you want access point mode, load wifi module this way: bcmdhd op_mode=2
 # and edit /etc/init.d/hostapd change DAEMON_CONF=/etc/hostapd.conf ; edit your wifi net settings in hostapd.conf ; reboot
 EOT
