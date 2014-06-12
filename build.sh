@@ -259,6 +259,7 @@ cp $SRC/bin/ramlog_2.0.0_all.deb $DEST/output/sdcard/tmp
 
 # bluetooth device enabler 
 cp $SRC/bin/brcm_patchram_plus $DEST/output/sdcard/usr/local/bin
+chroot $DEST/output/sdcard /bin/bash -c "chmod +x /usr/local/bin/brcm_patchram_plus"
 cp $SRC/scripts/brcm40183 $DEST/output/sdcard/etc/default
 cp $SRC/scripts/brcm40183-patch $DEST/output/sdcard/etc/init.d
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/brcm40183-patch"
