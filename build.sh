@@ -257,6 +257,13 @@ cp $SRC/scripts/sata-install.sh $DEST/output/sdcard/root
 cp $SRC/bin/nand1-cubietruck-debian-boot.tgz $DEST/output/sdcard/root
 cp $SRC/bin/ramlog_2.0.0_all.deb $DEST/output/sdcard/tmp
 
+# bluetooth device enabler 
+cp $SRC/bin/brcm_patchram_plus $DEST/output/sdcard/usr/local/bin
+cp $SRC/scripts/brcm40183 $DEST/output/sdcard/etc/default
+cp $SRC/scripts/brcm40183-patch $DEST/output/sdcard/etc/init.d
+chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/brcm40183-patch"
+chroot $DEST/output/sdcard /bin/bash -c "update-rc.d brcm40183-patch defaults" 
+
 # install custom bashrc
 #cp $SRC/scripts/bashrc $DEST/output/sdcard/root/.bashrc
 cat $SRC/scripts/bashrc >> $DEST/output/sdcard/etc/bash.bashrc 
@@ -338,11 +345,13 @@ EOT
 cat <<EOT >> $DEST/output/sdcard/etc/modules
 hci_uart
 gpio_sunxi
-bcmdhd
+bt_gpio
+wifi_gpio
 rfcomm
 hidp
 lirc_gpio
 sunxi_lirc
+# bcmdhd # wifi module
 # sunxi_ss # Allwinner Security System cryptographic accelerator
 # if you want access point mode, load wifi module this way: bcmdhd op_mode=2
 # and edit /etc/init.d/hostapd change DAEMON_CONF=/etc/hostapd.conf ; edit your wifi net settings in hostapd.conf ; reboot
@@ -431,7 +440,6 @@ cp $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd $DEST/output/sdcard/etc/
 cd $DEST/output/sdcard/usr/sbin/
 tar xvfz $SRC/bin/hostapd21.tgz
 cp $SRC/config/hostapd.conf $DEST/output/sdcard/etc/
-
 
 # sunxi-tools
 cd $DEST/sunxi-tools
