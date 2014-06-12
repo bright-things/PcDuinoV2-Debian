@@ -272,7 +272,7 @@ echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen
 chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
 echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install bluetooth lirc alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install bluetooth libbluetooth3 libbluetooth-dev lirc alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -y clean"
 
