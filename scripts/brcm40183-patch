@@ -1,11 +1,10 @@
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:          brcm40183-patch
-# Required-Start:    $local_fs
-# Required-Stop:     $local_fs
-# Should-Start:      brcm_patchram_plus
-# Default-Start:     S
-# Default-Stop:      
+# Required-Start: $syslog
+# Required-Stop:
+# Default-Start:  2 3 4 5
+# Default-Stop:   0 1 6
 # Short-Description: Patch firmware for brcm40183 Bluetooth adapter
 # Description:       Patch firmware for brcm40183 Bluetooth adapter
 ### END INIT INFO
@@ -43,22 +42,13 @@ else
 
     # Start patching
     /bin/echo -en "" > /dev/$PORT      # pull down RTS on UART
-    /bin/echo -en "Info: Start pushing firmware to device and waiting max. 60sec to complete ... "
-
-    /usr/bin/timeout 60s /usr/local/bin/brcm_patchram_plus -d --patchram /lib/firmware/ap6210/bcm20710a1.hcd --enable_hci --no2bytes --tosleep 1000 $MAC_OPTIONS /dev/$PORT > /var/log/brcm40183.firmware 2>&1
-
-    if [ $? -ne 0 ]
-    then
-         /bin/echo "terminated!"
-         /bin/echo "Error: Check /var/log/brcm40183.firmware for messages."
-         exit 1
-    else
-         /bin/echo "finished."
+    /usr/local/bin/brcm_patchram_plus -d --patchram /lib/firmware/ap6210/bcm20710a1.hcd --enable_hci --no2bytes --tosleep 1000 $MAC_OPTIONS /dev/$PORT &
+    sleep 10
+    clear
+    /bin/echo "Finished pushing firmware to device. Sometimes fails. In that case just restart and try again."
 
          # Enable interfaces
          /usr/sbin/hciattach /dev/$PORT any
-
-    fi
 fi
 }
 
@@ -81,4 +71,4 @@ case "$1" in
 	exit 3
 	;;
 esac
-
+ 
