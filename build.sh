@@ -1,6 +1,6 @@
 #!/bin/bash
 # --- Configuration -------------------------------------------------------------
-VERSION="CTDebian 2.0"
+VERSION="CTDebian 2.1"
 SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
@@ -66,7 +66,8 @@ then
 else
 	# git clone https://github.com/linux-sunxi/linux-sunxi -b sunxi-devel $DEST/linux-sunxi # Experimental kernel
 	# git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
-	git clone https://github.com/igorpecovnik/linux-sunxi $DEST/linux-sunxi # Dan-and + patwood's kernel 3.4.91+
+	# git clone https://github.com/igorpecovnik/linux-sunxi $DEST/linux-sunxi # Dan-and + patwood's kernel 3.4.91+
+	git clone https://github.com/dan-and/linux-sunxi -b dan-3.4.93 $DEST/linux-sunxi
 fi
 if [ -d "$DEST/sunxi-lirc" ]
 then
@@ -80,6 +81,11 @@ if [ "$SOURCE_COMPILE" = "yes" ]; then
 
 # Applying Patch for CB2 stability
 sed -e 's/.clock = 480/.clock = 432/g' -i $DEST/u-boot-sunxi/board/sunxi/dram_cubieboard2.c 
+
+# Applying patch for crypt and some performance tweak
+cd $DEST/linux-sunxi/ 
+patch -p1 < $SRC/patch/0001-system-more-responsive-in-case-multiple-tasks.patch
+patch -p1 < $SRC/patch/crypto.patch
 
 # Applying Patch for I2S
 #cd $DEST/linux-sunxi/ 
