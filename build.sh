@@ -263,7 +263,7 @@ chroot $DEST/output/sdcard /bin/bash -c "chmod +x /usr/local/bin/brcm_patchram_p
 cp $SRC/scripts/brcm40183 $DEST/output/sdcard/etc/default
 cp $SRC/scripts/brcm40183-patch $DEST/output/sdcard/etc/init.d
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/brcm40183-patch"
-#chroot $DEST/output/sdcard /bin/bash -c "update-rc.d brcm40183-patch defaults" 
+chroot $DEST/output/sdcard /bin/bash -c "update-rc.d brcm40183-patch defaults" 
 
 # install custom bashrc
 #cp $SRC/scripts/bashrc $DEST/output/sdcard/root/.bashrc
@@ -352,8 +352,8 @@ rfcomm
 hidp
 lirc_gpio
 sunxi_lirc
-# bcmdhd # wifi module
-# sunxi_ss # Allwinner Security System cryptographic accelerator
+bcmdhd
+sunxi_ss
 # if you want access point mode, load wifi module this way: bcmdhd op_mode=2
 # and edit /etc/init.d/hostapd change DAEMON_CONF=/etc/hostapd.conf ; edit your wifi net settings in hostapd.conf ; reboot
 EOT
