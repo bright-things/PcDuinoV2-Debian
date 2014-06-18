@@ -67,7 +67,7 @@ else
 	# git clone https://github.com/linux-sunxi/linux-sunxi -b sunxi-devel $DEST/linux-sunxi # Experimental kernel
 	# git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
 	# git clone https://github.com/igorpecovnik/linux-sunxi $DEST/linux-sunxi # Dan-and + patwood's kernel 3.4.91+
-	git clone https://github.com/dan-and/linux-sunxi -b dan-3.4.93 $DEST/linux-sunxi
+	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi
 fi
 if [ -d "$DEST/sunxi-lirc" ]
 then
