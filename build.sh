@@ -471,8 +471,11 @@ HDMI=$VERSION"_hdmi"
 
 sleep 5
 # create kernel + modules + headers + firmare
+VER=$(cat $DEST/linux-sunxi/Makefile | grep VERSION | head -1 | awk '{print $(NF)}')
+VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep PATCHLEVEL | head -1 | awk '{print $(NF)}')
+VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep SUBLEVEL | head -1 | awk '{print $(NF)}')
 cd $DEST/output/sdcard
-tar cvPfz $DEST"/output/"$VERSION"_kernel_mod_head_fw.tgz" -T $SRC/config/file.list
+tar cvPfz $DEST"/output/"$VERSION"_kernel_"$VER"_mod_head_fw.tgz" -T $SRC/config/file.list
 sleep 5
 
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
