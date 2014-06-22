@@ -10,16 +10,15 @@ ROOTPWD="1234"
 SRC=$(pwd)
 set -e
 
-# optimize build time
-CPUS=$(grep -c 'processor' /proc/cpuinfo) 
-
-CTHREADS="-j$(($CPUS + $CPUS/2))" # 100% cpu usage
-#CTHREADS="-j${CPUS}"
+# optimize build time with 100% CPU usage
+CPUS	 = $(grep -c 'processor' /proc/cpuinfo) 
+CTHREADS ="-j$(($CPUS + $CPUS/2))" 
+#CTHREADS="-j${CPUS}" # or not
 
 # To display build time at the end
 start=`date +%s`
 
-#Requires root ..
+# root is required ...
 if [ "$UID" -ne 0 ]
   then echo "Please run as root"
   exit
@@ -67,7 +66,7 @@ else
 	# git clone https://github.com/linux-sunxi/linux-sunxi -b sunxi-devel $DEST/linux-sunxi # Experimental kernel
 	# git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
 	# git clone https://github.com/igorpecovnik/linux-sunxi $DEST/linux-sunxi # Dan-and + patwood's kernel 3.4.91+
-	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi
+	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi # Dan-and 3.4.94+
 fi
 if [ -d "$DEST/sunxi-lirc" ]
 then
@@ -87,19 +86,6 @@ cd $DEST/linux-sunxi/
 patch -p1 < $SRC/patch/0001-system-more-responsive-in-case-multiple-tasks.patch
 patch -p1 < $SRC/patch/crypto.patch
 
-# Applying Patch for I2S
-#cd $DEST/linux-sunxi/ 
-#patch -p1 < $SRC/patch/0001-I2S-module-rework.patch
-
-# Applying Patch for Lirc
-#cd $DEST/linux-sunxi/
-#cp $DEST/sunxi-lirc/*.c $DEST/linux-sunxi/drivers/staging/media/lirc/
-#patch -p1 < $DEST/sunxi-lirc/install_staging.patch
-
-# Applying Patch for Clustering 
-#cd $DEST/linux-sunxi/ 
-#patch -p1 < $SRC/patch/clustering-patch-3.4-ja1.patch
-
 # Applying Patch for "high load". Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex
@@ -116,11 +102,11 @@ cp $SRC/config/kernel.config $DEST/linux-sunxi/
 #--------------------------------------------------------------------------------
 # Compiling everything
 #--------------------------------------------------------------------------------
-echo "------ Compiling kernel boot loaderb"
+echo "------ Compiling universal boot loader"
 cd $DEST/u-boot-sunxi
 # boot loader
 make clean && make $CTHREADS 'cubietruck' CROSS_COMPILE=arm-linux-gnueabihf-
-echo "------ Compiling sunxi tools"
+echo "------ Compiling sun-xi tools"
 cd $DEST/sunxi-tools
 # sunxi-tools
 make clean && make fex2bin && make bin2fex
@@ -130,18 +116,15 @@ fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/ct-vga.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $DEST/output/ct-hdmi.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-hdmi.fex $DEST/output/cb2-hdmi.bin
 fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex $DEST/output/cb2-vga.bin
-
 # kernel image
 echo "------ Compiling kernel"
 cd $DEST/linux-sunxi
 make clean
-
 # Adding wlan firmware to kernel source
-cd $DEST/linux-sunxi/firmware; 
-unzip -o $SRC/bin/ap6210.zip
-cd $DEST/linux-sunxi
-
-make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
+#cd $DEST/linux-sunxi/firmware; 
+#unzip -o $SRC/bin/ap6210.zip
+#cd $DEST/linux-sunxi
+#make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
 # get proven config
 cp $DEST/linux-sunxi/kernel.config $DEST/linux-sunxi/.config
 make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage modules
@@ -326,7 +309,7 @@ echo 2 > /proc/irq/$(cat /proc/interrupts | grep eth0 | cut -f 1 -d ":" )/smp_af
 exit 0
 EOF
 
-# set password to 1234
+# set root password
 chroot $DEST/output/sdcard /bin/bash -c "(echo $ROOTPWD;echo $ROOTPWD;) | passwd root" 
 
 # set hostname 
@@ -486,6 +469,8 @@ losetup -d $LOOP
 cp $DEST/output/debian_rootfs.raw $DEST/output/$HDMI.raw
 cd $DEST/output/
 zip $HDMI.zip $HDMI.raw
+# creating MD5 sum
+md5sum $HDMI.zip > $HDMI.md5
 rm $HDMI.raw
 
 # let's create VGA version
@@ -500,6 +485,8 @@ mv $DEST/output/debian_rootfs.raw $DEST/output/$VGA.raw
 cd $DEST/output/
 zip $VGA.zip $VGA.raw
 rm $VGA.raw
+# creating MD5 sum
+md5sum $VGA.zip > $VGA.md5
 end=`date +%s`
 runtime=$((end-start))
 echo "Runtime $runtime sec."
