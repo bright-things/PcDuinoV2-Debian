@@ -121,9 +121,9 @@ echo "------ Compiling kernel"
 cd $DEST/linux-sunxi
 make clean
 # Adding wlan firmware to kernel source
-#cd $DEST/linux-sunxi/firmware; 
-#unzip -o $SRC/bin/ap6210.zip
-#cd $DEST/linux-sunxi
+cd $DEST/linux-sunxi/firmware; 
+unzip -o $SRC/bin/ap6210.zip
+cd $DEST/linux-sunxi
 #make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
 # get proven config
 cp $DEST/linux-sunxi/kernel.config $DEST/linux-sunxi/.config
