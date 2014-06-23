@@ -11,8 +11,8 @@ SRC=$(pwd)
 set -e
 
 # optimize build time with 100% CPU usage
-CPUS	 = $(grep -c 'processor' /proc/cpuinfo) 
-CTHREADS ="-j$(($CPUS + $CPUS/2))" 
+CPUS=$(grep -c 'processor' /proc/cpuinfo) 
+CTHREADS="-j$(($CPUS + $CPUS/2))"
 #CTHREADS="-j${CPUS}" # or not
 
 # To display build time at the end
