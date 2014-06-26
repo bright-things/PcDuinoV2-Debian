@@ -11,4 +11,4 @@
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
-echo "Booting Debian Wheezy for Cubieboard ..."  >> /dev/tty0
+echo "Booting Debian for Cubieboard ..."  >> /dev/tty0

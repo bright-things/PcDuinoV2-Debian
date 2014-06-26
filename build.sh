@@ -1,10 +1,11 @@
 #!/bin/bash
 # --- Configuration -------------------------------------------------------------
-VERSION="CTDebian 2.1"
+RELEASE="wheezy" # jessie or wheezy
+VERSION="CTDebian 2.2 $RELEASE"
 SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
-DEST=/tmp/Cubie
+DEST=$(pwd)/output
 ROOTPWD="1234"
 # --- End -----------------------------------------------------------------------
 SRC=$(pwd)
@@ -29,7 +30,7 @@ sleep 3
 # Downloading necessary files
 #--------------------------------------------------------------------------------
 echo "------ Downloading necessary files"
-apt-get -qq -y install zip binfmt-support bison build-essential ccache debootstrap flex gawk gcc-arm-linux-gnueabi gcc-arm-linux-gnueabihf gettext linux-headers-generic linux-image-generic lvm2 qemu-user-static texinfo texlive u-boot-tools uuid-dev zlib1g-dev unzip libncurses5-dev pkg-config libusb-1.0-0-dev parted
+apt-get -qq -y install zip binfmt-support bison build-essential ccache debootstrap flex gawk lvm2 qemu-user-static texinfo texlive u-boot-tools uuid-dev zlib1g-dev unzip libncurses5-dev pkg-config libusb-1.0-0-dev parted
 
 #--------------------------------------------------------------------------------
 # Preparing output / destination files
@@ -82,9 +83,9 @@ if [ "$SOURCE_COMPILE" = "yes" ]; then
 sed -e 's/.clock = 480/.clock = 432/g' -i $DEST/u-boot-sunxi/board/sunxi/dram_cubieboard2.c 
 
 # Applying patch for crypt and some performance tweak
-cd $DEST/linux-sunxi/ 
-patch -p1 < $SRC/patch/0001-system-more-responsive-in-case-multiple-tasks.patch
-patch -p1 < $SRC/patch/crypto.patch
+#cd $DEST/linux-sunxi/ 
+#patch -p1 < $SRC/patch/0001-system-more-responsive-in-case-multiple-tasks.patch
+#patch -p1 < $SRC/patch/crypto.patch
 
 # Applying Patch for "high load". Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
@@ -175,7 +176,7 @@ mount -t ext4 $LOOP $DEST/output/sdcard/
 
 echo "------ Install basic filesystem"
 # install base system
-debootstrap --no-check-gpg --arch=armhf --foreign wheezy $DEST/output/sdcard/
+debootstrap --no-check-gpg --arch=armhf --foreign $RELEASE $DEST/output/sdcard/
 # we need this
 cp /usr/bin/qemu-arm-static $DEST/output/sdcard/usr/bin/
 # enable arm binary format so that the cross-architecture chroot environment will work
@@ -201,15 +202,12 @@ EOT
 rm $DEST/output/sdcard/etc/motd
 touch $DEST/output/sdcard/etc/motd
 
-# apt list
-cat <<EOT > $DEST/output/sdcard/etc/apt/sources.list
-deb http://http.debian.net/debian wheezy main contrib non-free
-deb-src http://http.debian.net/debian wheezy main contrib non-free
-deb http://http.debian.net/debian wheezy-updates main contrib non-free
-deb-src http://http.debian.net/debian wheezy-updates main contrib non-free
-deb http://security.debian.org/debian-security wheezy/updates main contrib non-free
-deb-src http://security.debian.org/debian-security wheezy/updates main contrib non-free
-EOT
+# choose proper apt list
+cp $SRC/config/sources.list.$RELEASE $DEST/output/sdcard/etc/apt/sources.list
+
+#cat <<EOT > $DEST/output/sdcard/etc/apt/sources.list
+# your custom repo
+#EOT
 
 # update
 chroot $DEST/output/sdcard /bin/bash -c "apt-get update"
@@ -269,7 +267,7 @@ echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen
 chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
 echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
 chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install bluetooth libbluetooth3 libbluetooth-dev lirc alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils uboot-envtools pciutils wireless-tools wpasupplicant procps libnl-dev parted cpufrequtils console-setup unzip bridge-utils" 
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install libnl-3-dev bluetooth libbluetooth3 libbluetooth-dev lirc alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils pciutils wireless-tools wpasupplicant procps parted cpufrequtils console-setup unzip bridge-utils" 
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -y clean"
 
@@ -311,6 +309,11 @@ EOF
 
 # set root password
 chroot $DEST/output/sdcard /bin/bash -c "(echo $ROOTPWD;echo $ROOTPWD;) | passwd root" 
+
+# enable root login for latest ssh
+cat <<EOT >> $DEST/output/sdcard/etc/ssh/sshd_config
+PermitRootLogin yes
+EOT
 
 # set hostname 
 echo cubie > $DEST/output/sdcard/etc/hostname
@@ -428,8 +431,12 @@ cp $DEST/usb-redirector-linux-arm-eabi/files/rc.usbsrvd $DEST/output/sdcard/etc/
 
 # hostapd from testing binary replace.
 cd $DEST/output/sdcard/usr/sbin/
-tar xvfz $SRC/bin/hostapd21.tgz
+tar xvfz $SRC/bin/hostapd23.tgz
 cp $SRC/config/hostapd.conf $DEST/output/sdcard/etc/
+
+# temper binary for USB temp meter
+cd $DEST/output/sdcard/usr/local/bin
+tar xvfz $SRC/bin/temper.tgz
 
 # sunxi-tools
 cd $DEST/sunxi-tools
@@ -447,7 +454,7 @@ umount -l $DEST/output/sdcard/proc
 umount -l $DEST/output/sdcard/sys
 
 # let's create nice file name
-VERSION="${VERSION/ /_}"
+VERSION="${VERSION// /_}"
 VGA=$VERSION"_vga"
 HDMI=$VERSION"_hdmi"
 #####
@@ -459,7 +466,11 @@ VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep PATCHLEVEL | head -1 | awk '{pr
 VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep SUBLEVEL | head -1 | awk '{print $(NF)}')
 cd $DEST/output/sdcard
 tar cvPfz $DEST"/output/"$VERSION"_kernel_"$VER"_mod_head_fw.tgz" -T $SRC/config/file.list
-sleep 5
+sleep 1
+# creating MD5 sum
+cd $DEST/output/
+md5sum "$VERSION"_kernel_"$VER"_mod_head_fw.tgz > "$VERSION"_kernel_"$VER"_mod_head_fw.md5
+sleep 1
 
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
