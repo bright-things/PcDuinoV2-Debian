@@ -297,7 +297,7 @@ chroot $DEST/output/sdcard /bin/bash -c "export TERM=linux"
 
 # configure MIN / MAX Speed for cpufrequtils
 sed -e 's/MIN_SPEED="0"/MIN_SPEED="480000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
-sed -e 's/MAX_SPEED="0"/MAX_SPEED="1200000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
+sed -e 's/MAX_SPEED="0"/MAX_SPEED="1010000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 sed -e 's/ondemand/interactive/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 
 # eth0 should run on a dedicated processor
