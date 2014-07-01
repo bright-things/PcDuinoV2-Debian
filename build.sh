@@ -1,7 +1,7 @@
 #!/bin/bash
 # --- Configuration -------------------------------------------------------------
-RELEASE="wheezy" # jessie or wheezy
-VERSION="CTDebian 2.2 $RELEASE"
+RELEASE="jessie" # jessie or wheezy
+VERSION="CTDebian 2.3 $RELEASE"
 SOURCE_COMPILE="yes"
 DEST_LANG="en_US"
 DEST_LANGUAGE="en"
@@ -67,7 +67,7 @@ else
 	# git clone https://github.com/linux-sunxi/linux-sunxi -b sunxi-devel $DEST/linux-sunxi # Experimental kernel
 	# git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
 	# git clone https://github.com/igorpecovnik/linux-sunxi $DEST/linux-sunxi # Dan-and + patwood's kernel 3.4.91+
-	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi # Dan-and 3.4.94+
+	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi -b dan-3.4.96 # Dan-and 3.4.94+
 fi
 if [ -d "$DEST/sunxi-lirc" ]
 then
@@ -310,10 +310,10 @@ EOF
 # set root password
 chroot $DEST/output/sdcard /bin/bash -c "(echo $ROOTPWD;echo $ROOTPWD;) | passwd root" 
 
-# enable root login for latest ssh
-cat <<EOT >> $DEST/output/sdcard/etc/ssh/sshd_config
-PermitRootLogin yes
-EOT
+if [ "$RELEASE" = "jessie" ]; then
+# enable root login for latest ssh on jessie
+sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' $DEST/output/sdcard/etc/ssh/sshd_config || fail
+fi
 
 # set hostname 
 echo cubie > $DEST/output/sdcard/etc/hostname
@@ -466,11 +466,11 @@ VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep PATCHLEVEL | head -1 | awk '{pr
 VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep SUBLEVEL | head -1 | awk '{print $(NF)}')
 cd $DEST/output/sdcard
 tar cvPfz $DEST"/output/"$VERSION"_kernel_"$VER"_mod_head_fw.tgz" -T $SRC/config/file.list
-sleep 1
+sleep 5
 # creating MD5 sum
 cd $DEST/output/
 md5sum "$VERSION"_kernel_"$VER"_mod_head_fw.tgz > "$VERSION"_kernel_"$VER"_mod_head_fw.md5
-sleep 1
+sleep 2
 
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
