@@ -86,7 +86,7 @@ sed -e 's/.clock = 480/.clock = 432/g' -i $DEST/u-boot-sunxi/board/sunxi/dram_cu
 #cd $DEST/linux-sunxi/ 
 #patch -p1 < $SRC/patch/0001-system-more-responsive-in-case-multiple-tasks.patch
 #patch -p1 < $SRC/patch/crypto.patch
-#patch -p1 < $SRC/disp_vsync.patch
+#patch -p1 < $SRC/patch/disp_vsync.patch
 
 # Applying Patch for "high load". Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
