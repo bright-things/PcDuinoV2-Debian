@@ -67,7 +67,7 @@ else
 	# git clone https://github.com/linux-sunxi/linux-sunxi -b sunxi-devel $DEST/linux-sunxi # Experimental kernel
 	# git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
 	# git clone https://github.com/igorpecovnik/linux-sunxi $DEST/linux-sunxi # Dan-and + patwood's kernel 3.4.91+
-	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi -b dan-3.4.96 # Dan-and 3.4.94+
+	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi -b dan-3.4.97 # Dan-and 3.4.94+
 fi
 if [ -d "$DEST/sunxi-lirc" ]
 then
@@ -87,6 +87,7 @@ sed -e 's/.clock = 480/.clock = 432/g' -i $DEST/u-boot-sunxi/board/sunxi/dram_cu
 #patch -p1 < $SRC/patch/0001-system-more-responsive-in-case-multiple-tasks.patch
 #patch -p1 < $SRC/patch/crypto.patch
 #patch -p1 < $SRC/patch/disp_vsync.patch
+#patch -p1 < $SRC/patch/chip_id.patch
 
 # Applying Patch for "high load". Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
@@ -304,7 +305,7 @@ sed -e 's/ondemand/interactive/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 # eth0 should run on a dedicated processor
 sed -e 's/exit 0//g' -i $DEST/output/sdcard/etc/rc.local
 cat >> $DEST/output/sdcard/etc/rc.local <<"EOF"
-echo 2 > /proc/irq/$(cat /proc/interrupts | grep eth0 | cut -f 1 -d ":" )/smp_affinity
+echo 2 > /proc/irq/$(cat /proc/interrupts | grep eth0 | cut -f 1 -d ":" | tr -d " ")/smp_affinity
 exit 0
 EOF
 
@@ -466,12 +467,14 @@ VER=$(cat $DEST/linux-sunxi/Makefile | grep VERSION | head -1 | awk '{print $(NF
 VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep PATCHLEVEL | head -1 | awk '{print $(NF)}')
 VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep SUBLEVEL | head -1 | awk '{print $(NF)}')
 cd $DEST/output/sdcard
-tar cvPfz $DEST"/output/"$VERSION"_kernel_"$VER"_mod_head_fw.tgz" -T $SRC/config/file.list
+tar cvPf $DEST"/output/sunxi_kernel_"$VER"_mod_head_fw.tar" -T $SRC/config/file.list
 sleep 5
 # creating MD5 sum
 cd $DEST/output/
-md5sum "$VERSION"_kernel_"$VER"_mod_head_fw.tgz > "$VERSION"_kernel_"$VER"_mod_head_fw.md5
+md5sum sunxi_kernel_"$VER"_mod_head_fw.tar > sunxi_kernel_"$VER"_mod_head_fw.md5
+zip sunxi_kernel_"$VER"_mod_head_fw.zip sunxi_kernel_"$VER"_mod_head_fw.*
 sleep 2
+rm *.tar *.md5
 
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
@@ -480,10 +483,10 @@ losetup -d $LOOP
 
 cp $DEST/output/debian_rootfs.raw $DEST/output/$HDMI.raw
 cd $DEST/output/
-zip $HDMI.zip $HDMI.raw
 # creating MD5 sum
-md5sum $HDMI.zip > $HDMI.md5
-rm $HDMI.raw
+md5sum $HDMI.raw > $HDMI.md5
+zip $HDMI.zip $HDMI.*
+rm $HDMI.raw $HDMI.md5
 
 # let's create VGA version
 LOOP=$(losetup -f)
@@ -495,10 +498,10 @@ umount -l $DEST/output/sdcard/
 losetup -d $LOOP
 mv $DEST/output/debian_rootfs.raw $DEST/output/$VGA.raw
 cd $DEST/output/
-zip $VGA.zip $VGA.raw
-rm $VGA.raw
 # creating MD5 sum
-md5sum $VGA.zip > $VGA.md5
+md5sum $VGA.raw > $VGA.md5
+zip $VGA.zip $VGA.*
+rm $VGA.raw $VGA.md5
 end=`date +%s`
 runtime=$((end-start))
 echo "Runtime $runtime sec."
