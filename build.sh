@@ -1,22 +1,33 @@
 #!/bin/bash
+#
+# Created by Igor Pecovnik, www.igorpecovnik.com
+#
 # --- Configuration -------------------------------------------------------------
-RELEASE="jessie" # jessie or wheezy
-VERSION="CTDebian 2.3 $RELEASE"
-SOURCE_COMPILE="yes"
-DEST_LANG="en_US"
-DEST_LANGUAGE="en"
-DEST=$(pwd)/output
-ROOTPWD="1234"
+#
+#
+
+RELEASE="wheezy"                                   # jessie or wheezy
+VERSION="CTDebian 2.4 $RELEASE"                    # just name
+SOURCE_COMPILE="yes"                               # yes / no
+DEST_LANG="en_US.UTF-8"                            # sl_SI.UTF-8, en_US.UTF-8
+TZDATA="Europe/Ljubljana"                          # Timezone
+DEST=$(pwd)/output                                 # Destination
+ROOTPWD="1234"                                     # Must be changed @first login
+
+#
+#
 # --- End -----------------------------------------------------------------------
+
+# source is where we start the script
 SRC=$(pwd)
 set -e
 
 # optimize build time with 100% CPU usage
-CPUS=$(grep -c 'processor' /proc/cpuinfo) 
+CPUS=$(grep -c 'processor' /proc/cpuinfo)
 CTHREADS="-j$(($CPUS + $CPUS/2))"
 #CTHREADS="-j${CPUS}" # or not
 
-# To display build time at the end
+# to display build time at the end
 start=`date +%s`
 
 # root is required ...
@@ -24,8 +35,9 @@ if [ "$UID" -ne 0 ]
   then echo "Please run as root"
   exit
 fi
-echo "Building Cubietruck-Debian in $DEST from $SRC"
-sleep 3
+
+echo "Building $VERSION in $DEST from $SRC"
+
 #--------------------------------------------------------------------------------
 # Downloading necessary files
 #--------------------------------------------------------------------------------
@@ -65,9 +77,7 @@ then
 	cd $DEST/linux-sunxi; git pull -f; cd $SRC
 else
 	# git clone https://github.com/linux-sunxi/linux-sunxi -b sunxi-devel $DEST/linux-sunxi # Experimental kernel
-	# git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
-	# git clone https://github.com/igorpecovnik/linux-sunxi $DEST/linux-sunxi # Dan-and + patwood's kernel 3.4.91+
-	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi -b dan-3.4.97 # Dan-and 3.4.94+
+	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi -b dan-3.4.98 # Dan-and 3.4.94+
 fi
 if [ -d "$DEST/sunxi-lirc" ]
 then
@@ -127,7 +137,6 @@ make clean
 cd $DEST/linux-sunxi/firmware; 
 unzip -o $SRC/bin/ap6210.zip
 cd $DEST/linux-sunxi
-#make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
 # get proven config
 cp $DEST/linux-sunxi/kernel.config $DEST/linux-sunxi/.config
 make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage modules
@@ -135,34 +144,40 @@ make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=outp
 make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HDR_PATH=output headers_install
 fi
 
+
+
+
 #--------------------------------------------------------------------------------
 # Creating SD Images
 #--------------------------------------------------------------------------------
 echo "------ Creating SD Images"
 cd $DEST/output
 # create 1G image and mount image to next free loop device
-dd if=/dev/zero of=debian_rootfs.raw bs=1M count=1000
+dd if=/dev/zero of=debian_rootfs.raw bs=1M count=1000 status=noxfer
 LOOP=$(losetup -f)
 losetup $LOOP debian_rootfs.raw
 sync
-echo "------ Partitionning and mounting filesystem"
-# make image bootable
-dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=$LOOP bs=1024 seek=8
-sync
-sleep 3
+
+echo "------ Partitionning, writing boot loader and mounting filesystem"
 # create one partition starting at 2048 which is default
-(echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP >> /dev/null || true
-# just to make sure
-sleep 3
-sync
+parted -s $LOOP -- mklabel msdos
+sleep 1
+parted -s $LOOP -- mkpart primary ext4  2048s -1s
+sleep 1
 partprobe $LOOP
-sleep 3
+sleep 1
+
+# make image bootable
+dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=$LOOP bs=1024 seek=8 status=noxfer
 sync
+sleep 1
 losetup -d $LOOP
+sleep 1
 
 # 2048 (start) x 512 (block size) = where to mount partition
 losetup -o 1048576 $LOOP debian_rootfs.raw
 sleep 4
+
 # create filesystem
 mkfs.ext4 $LOOP
 
@@ -196,7 +211,7 @@ mount -t devpts chpts $DEST/output/sdcard/dev/pts
 
 # update /etc/issue
 cat <<EOT > $DEST/output/sdcard/etc/issue
-Debian GNU/Linux 7 $VERSION
+Debian GNU/Linux $VERSION
 
 EOT
 
@@ -211,9 +226,13 @@ cp $SRC/config/sources.list.$RELEASE $DEST/output/sdcard/etc/apt/sources.list
 # your custom repo
 #EOT
 
-# update
+# update, fix locales
 chroot $DEST/output/sdcard /bin/bash -c "apt-get update"
-chroot $DEST/output/sdcard /bin/bash -c "export LANG=C"    
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install locales makedev"
+sed -i "s/^# $DEST_LANG/$DEST_LANG/" $DEST/output/sdcard/etc/locale.gen
+chroot $DEST/output/sdcard /bin/bash -c "locale-gen $DEST_LANG"
+chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG LANGUAGE=$DEST_LANG DEBIAN_FRONTEND=noninteractive"
+chroot $DEST/output/sdcard /bin/bash -c "update-locale LANG=$DEST_LANG LANGUAGE=$DEST_LANG LC_MESSAGES=POSIX"
 
 # set up 'apt
 cat <<END > $DEST/output/sdcard/etc/apt/apt.conf.d/71-no-recommends
@@ -255,22 +274,15 @@ chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/brcm40183-patch"
 chroot $DEST/output/sdcard /bin/bash -c "update-rc.d brcm40183-patch defaults" 
 
 # install custom bashrc
-#cp $SRC/scripts/bashrc $DEST/output/sdcard/root/.bashrc
 cat $SRC/scripts/bashrc >> $DEST/output/sdcard/etc/bash.bashrc 
 
 # make it executable
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
 # and startable on boot
 chroot $DEST/output/sdcard /bin/bash -c "update-rc.d cubian-firstrun defaults" 
-# install and configure locales
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install locales"
-# reconfigure locales
-echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen 
-chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
-echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
-chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install libnl-3-dev bluetooth libbluetooth3 libbluetooth-dev lirc alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils pciutils wireless-tools wpasupplicant procps parted cpufrequtils console-setup unzip bridge-utils" 
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
+echo "Installing aditional applications"
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install makedev libfuse2 libc6 libnl-3-dev bluetooth libbluetooth3 libbluetooth-dev lirc alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntp rsync usbutils pciutils wireless-tools wpasupplicant procps parted cpufrequtils unzip bridge-utils"
+# removed in 2.4 #chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install console-setup console-data"
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -y clean"
 
 # change dynamic motd
@@ -297,6 +309,10 @@ sed -e 's/# Required-Stop:     umountnfs $time/# Required-Stop:     umountnfs $t
 # console
 chroot $DEST/output/sdcard /bin/bash -c "export TERM=linux" 
 
+# Change Time zone data
+echo $TZDATA > $DEST/output/sdcard/etc/timezone
+chroot $DEST/output/sdcard /bin/bash -c "dpkg-reconfigure -f noninteractive tzdata"
+
 # configure MIN / MAX Speed for cpufrequtils
 sed -e 's/MIN_SPEED="0"/MIN_SPEED="480000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 sed -e 's/MAX_SPEED="0"/MAX_SPEED="1010000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
@@ -311,6 +327,8 @@ EOF
 
 # set root password
 chroot $DEST/output/sdcard /bin/bash -c "(echo $ROOTPWD;echo $ROOTPWD;) | passwd root" 
+# force password change upon first login 
+chroot $DEST/output/sdcard /bin/bash -c "chage -d 0 root" 
 
 if [ "$RELEASE" = "jessie" ]; then
 # enable root login for latest ssh on jessie
@@ -409,7 +427,7 @@ cp -R $DEST/linux-sunxi/output/include/ $DEST/output/sdcard/usr/
 cp $DEST/linux-sunxi/Module.symvers $DEST/output/sdcard/usr/include
 
 # remove false links to the kernel source
-# find $DEST/output/sdcard/lib -type l -exec rm -f {} \;
+find $DEST/output/sdcard/lib/modules -type l -exec rm -f {} \;
 
 # USB redirector tools http://www.incentivespro.com
 cd $DEST
@@ -467,7 +485,8 @@ VER=$(cat $DEST/linux-sunxi/Makefile | grep VERSION | head -1 | awk '{print $(NF
 VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep PATCHLEVEL | head -1 | awk '{print $(NF)}')
 VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep SUBLEVEL | head -1 | awk '{print $(NF)}')
 cd $DEST/output/sdcard
-tar cvPf $DEST"/output/sunxi_kernel_"$VER"_mod_head_fw.tar" -T $SRC/config/file.list
+echo "Creating kernel package ..."
+tar cPf $DEST"/output/sunxi_kernel_"$VER"_mod_head_fw.tar" -T $SRC/config/file.list
 sleep 5
 # creating MD5 sum
 cd $DEST/output/
