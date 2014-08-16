@@ -96,6 +96,14 @@ then
 else
 	git clone https://github.com/matzrh/sunxi-lirc $DEST/sunxi-lirc                                 # Lirc RX and TX functionality for Allwinner A1X and A20 chips
 fi
+if [ -d "$DEST/batman-adv" ]
+then
+	cd $DEST/batman-adv; git pull -f; cd $SRC
+else
+	git clone http://git.open-mesh.org/batman-adv.git $DEST/batman-adv
+	# New batman-adv module
+fi
+
 
 
 if [ "$SOURCE_COMPILE" = "yes" ]; then
@@ -163,11 +171,15 @@ cp $DEST/linux-sunxi/Module.symvers $DEST/linux-sunxi/output/usr/include
 cd $DEST/linux-sunxi-next
 make clean
 cp $SRC/config/kernel.config.next $DEST/linux-sunxi-next/.config
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOADADDR=0x40008000 modules
 make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOADADDR=0x40008000 uImage modules dtbs
 make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
 make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HDR_PATH=output/usr headers_install
 cp $DEST/linux-sunxi/Module.symvers $DEST/linux-sunxi-next/output/usr/include
 fi
+
+cd $DEST/batman-adv
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- KERNELPATH=$DEST/linux-sunxi
 
 #--------------------------------------------------------------------------------
 # Creating boot directory for current and next kernel
