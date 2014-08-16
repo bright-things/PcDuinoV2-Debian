@@ -20,11 +20,12 @@ if which temper >/dev/null; then
    fi
 fi
 
+if [ -d "/sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/" ]; then
 TEMP=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
 TEMP=$(echo "scale=1;${TEMP}/1000" | bc)  
 CEL=$(awk 'BEGIN { print "\302\260C"; }')
 OUT="${OUT}- Board: ${TEMP}${CEL} ${TEMPER}"
-
+fi
 
 # if we have a hard drive
 if [ -e '/dev/sda' ]; then

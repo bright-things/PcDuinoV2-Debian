@@ -1,22 +1,34 @@
 #!/bin/bash
+#
+# Created by Igor Pecovnik, www.igorpecovnik.com
+#
 # --- Configuration -------------------------------------------------------------
-RELEASE="jessie" # jessie or wheezy
-VERSION="CTDebian 2.3 $RELEASE"
-SOURCE_COMPILE="yes"
-DEST_LANG="en_US"
-DEST_LANGUAGE="en"
-DEST=$(pwd)/output
-ROOTPWD="1234"
+#
+#
+
+RELEASE="wheezy"                                   # jessie(currently broken) or wheezy
+VERSION="CTDebian 2.5 $RELEASE"                    # just name
+SOURCE_COMPILE="yes"                               # yes / no
+DEST_LANG="en_US.UTF-8"                            # sl_SI.UTF-8, en_US.UTF-8
+TZDATA="Europe/Ljubljana"                          # Timezone
+DEST=$(pwd)/output                                 # Destination
+ROOTPWD="1234"                                     # Must be changed @first login
+HOST="cubie"									   # Hostname
+
+#
+#
 # --- End -----------------------------------------------------------------------
+
+# source is where we start the script
 SRC=$(pwd)
 set -e
 
 # optimize build time with 100% CPU usage
-CPUS=$(grep -c 'processor' /proc/cpuinfo) 
+CPUS=$(grep -c 'processor' /proc/cpuinfo)
 CTHREADS="-j$(($CPUS + $CPUS/2))"
 #CTHREADS="-j${CPUS}" # or not
 
-# To display build time at the end
+# to display build time at the end
 start=`date +%s`
 
 # root is required ...
@@ -24,60 +36,73 @@ if [ "$UID" -ne 0 ]
   then echo "Please run as root"
   exit
 fi
-echo "Building Cubietruck-Debian in $DEST from $SRC"
-sleep 3
+
+clear
+echo "Building $VERSION."
+
 #--------------------------------------------------------------------------------
 # Downloading necessary files
 #--------------------------------------------------------------------------------
-echo "------ Downloading necessary files"
-apt-get -qq -y install zip binfmt-support bison build-essential ccache debootstrap flex gawk gcc-arm-linux-gnueabi gcc-arm-linux-gnueabihf lvm2 qemu-user-static texinfo texlive u-boot-tools uuid-dev zlib1g-dev unzip libncurses5-dev pkg-config libusb-1.0-0-dev parted
+echo "Downloading necessary files."
+#apt-get -qq -y install zip binfmt-support bison build-essential ccache debootstrap flex gawk gcc-arm-linux-gnueabi gcc-arm-linux-gnueabihf lvm2 qemu-user-static texinfo texlive u-boot-tools uuid-dev zlib1g-dev unzip libncurses5-dev pkg-config libusb-1.0-0-dev parted
 
 #--------------------------------------------------------------------------------
 # Preparing output / destination files
 #--------------------------------------------------------------------------------
 
-echo "------ Fetching files from github"
+echo "Fetching files from Github."
 mkdir -p $DEST/output
-cp output/uEnv.* $DEST/output
+
+if [ -d "$DEST/u-boot-sunxi-next" ]
+then
+	cd $DEST/u-boot-sunxi-next ; git pull; cd $SRC
+else
+	git clone https://github.com/jwrdegoede/u-boot-sunxi/ -b next $DEST/u-boot-sunxi-next            # For booting experimental kernel
+fi
 
 if [ -d "$DEST/u-boot-sunxi" ]
 then
 	cd $DEST/u-boot-sunxi ; git pull; cd $SRC
 else
-	#git clone https://github.com/linux-sunxi/u-boot-sunxi $DEST/u-boot-sunxi     # Experimental boot loader
-	#cd $DEST/u-boot-sunxi; patch -p1 < $SRC/patch/uboot-dualboot.patch           # Patching for dual boot
-	git clone https://github.com/patrickhwood/u-boot -b pat-cb2-ct  $DEST/u-boot-sunxi # CB2 / CT Dual boot loader
+	git clone https://github.com/patrickhwood/u-boot -b pat-cb2-ct  $DEST/u-boot-sunxi               # Cubieboard 2 / Cubietruck Dual boot loader
 fi
 if [ -d "$DEST/sunxi-tools" ]
 then
 	cd $DEST/sunxi-tools; git pull; cd $SRC
 else
-	git clone https://github.com/linux-sunxi/sunxi-tools.git $DEST/sunxi-tools # Allwinner tools
+	git clone https://github.com/linux-sunxi/sunxi-tools.git $DEST/sunxi-tools                       # Allwinner tools
 fi
 if [ -d "$DEST/cubie_configs" ]
 then
 	cd $DEST/cubie_configs; git pull; cd $SRC
 else
-	git clone https://github.com/cubieboard/cubie_configs $DEST/cubie_configs # Hardware configurations
+	git clone https://github.com/cubieboard/cubie_configs $DEST/cubie_configs                       # Hardware configurations
+fi
+if [ -d "$DEST/linux-sunxi-next" ]
+then
+	cd $DEST/linux-sunxi-next; git pull -f; cd $SRC
+else
+	git clone https://github.com/linux-sunxi/linux-sunxi/ -b sunxi-next $DEST/linux-sunxi-next      # Experimental kernel source
 fi
 if [ -d "$DEST/linux-sunxi" ]
 then
 	cd $DEST/linux-sunxi; git pull -f; cd $SRC
 else
-	# git clone https://github.com/linux-sunxi/linux-sunxi -b sunxi-devel $DEST/linux-sunxi # Experimental kernel
-	# git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
-	# git clone https://github.com/igorpecovnik/linux-sunxi $DEST/linux-sunxi # Dan-and + patwood's kernel 3.4.91+
-	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi -b dan-3.4.96 # Dan-and 3.4.94+
+	git clone https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi -b dan-3.4.101               # Stable kernel source
 fi
 if [ -d "$DEST/sunxi-lirc" ]
 then
 	cd $DEST/sunxi-lirc; git pull -f; cd $SRC
 else
-	git clone https://github.com/matzrh/sunxi-lirc $DEST/sunxi-lirc # Lirc RX and TX functionality for Allwinner A1X and A20 chips
+	git clone https://github.com/matzrh/sunxi-lirc $DEST/sunxi-lirc                                 # Lirc RX and TX functionality for Allwinner A1X and A20 chips
 fi
 
 
 if [ "$SOURCE_COMPILE" = "yes" ]; then
+
+#--------------------------------------------------------------------------------
+# Patching
+#--------------------------------------------------------------------------------
 
 # Applying Patch for CB2 stability
 sed -e 's/.clock = 480/.clock = 432/g' -i $DEST/u-boot-sunxi/board/sunxi/dram_cubieboard2.c 
@@ -87,6 +112,7 @@ sed -e 's/.clock = 480/.clock = 432/g' -i $DEST/u-boot-sunxi/board/sunxi/dram_cu
 #patch -p1 < $SRC/patch/0001-system-more-responsive-in-case-multiple-tasks.patch
 #patch -p1 < $SRC/patch/crypto.patch
 #patch -p1 < $SRC/patch/disp_vsync.patch
+#patch -p1 < $SRC/patch/chip_id.patch
 
 # Applying Patch for "high load". Could cause troubles with USB OTG port
 sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
@@ -98,27 +124,28 @@ sed -e 's/screen0_output_type.*/screen0_output_type     = 4/g' $DEST/cubie_confi
 sed -e 's/screen0_output_type.*/screen0_output_type     = 3/g' $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex > $DEST/cubie_configs/sysconfig/linux/cb2-hdmi.fex
 sed -e 's/screen0_output_type.*/screen0_output_type     = 4/g' $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex > $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex
 
-# Copying Kernel config
-cp $SRC/config/kernel.config $DEST/linux-sunxi/
-
 #--------------------------------------------------------------------------------
 # Compiling everything
 #--------------------------------------------------------------------------------
+
+# boot loader
 echo "------ Compiling universal boot loader"
 cd $DEST/u-boot-sunxi
-# boot loader
 make clean && make $CTHREADS 'cubietruck' CROSS_COMPILE=arm-linux-gnueabihf-
+
+# boot loader next
+#cd $DEST/u-boot-sunxi-next
+#make clean && make $CTHREADS Cubietruck_config CROSS_COMPILE=arm-linux-gnueabihf- && make $CTHREADS CROSS_COMPILE=arm-linux-gnueabihf-
+# currently broken. using binary
+cp $SRC/bin/uboot-next.bin $DEST/u-boot-sunxi-next/u-boot-sunxi-with-spl.bin
+
+# sunxi tools
 echo "------ Compiling sun-xi tools"
 cd $DEST/sunxi-tools
-# sunxi-tools
 make clean && make fex2bin && make bin2fex
 cp fex2bin bin2fex /usr/local/bin/
-# hardware configuration
-fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/ct-vga.bin
-fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $DEST/output/ct-hdmi.bin
-fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-hdmi.fex $DEST/output/cb2-hdmi.bin
-fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex $DEST/output/cb2-vga.bin
-# kernel image
+
+# kernel image stable
 echo "------ Compiling kernel"
 cd $DEST/linux-sunxi
 make clean
@@ -126,13 +153,70 @@ make clean
 cd $DEST/linux-sunxi/firmware; 
 unzip -o $SRC/bin/ap6210.zip
 cd $DEST/linux-sunxi
-#make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
 # get proven config
-cp $DEST/linux-sunxi/kernel.config $DEST/linux-sunxi/.config
+cp $SRC/config/kernel.config $DEST/linux-sunxi/.config
 make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage modules
 make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
-make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HDR_PATH=output headers_install
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HDR_PATH=output/usr headers_install
+cp $DEST/linux-sunxi/Module.symvers $DEST/linux-sunxi/output/usr/include
+# kernel image experimental
+cd $DEST/linux-sunxi-next
+make clean
+cp $SRC/config/kernel.config.next $DEST/linux-sunxi-next/.config
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOADADDR=0x40008000 uImage modules dtbs
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
+make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HDR_PATH=output/usr headers_install
+cp $DEST/linux-sunxi/Module.symvers $DEST/linux-sunxi-next/output/usr/include
 fi
+
+#--------------------------------------------------------------------------------
+# Creating boot directory for current and next kernel
+#--------------------------------------------------------------------------------
+# 
+mkdir -p $DEST/output/boot/
+# Current 
+fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $DEST/output/boot/ct-vga.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $DEST/output/boot/ct-hdmi.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-hdmi.fex $DEST/output/boot/cb2-hdmi.bin
+fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex $DEST/output/boot/cb2-vga.bin
+cp $SRC/config/uEnv.* $DEST/output/boot/
+cp $DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin $DEST/output/boot/uboot.bin
+cp $SRC/output/linux-sunxi/arch/arm/boot/uImage $DEST/output/boot/uImage
+# Next
+cp $SRC/config/boot.cmd $DEST/output/boot/
+mkimage -C none -A arm -T script -d $DEST/output/boot/boot.cmd $DEST/output/boot/boot.scr.disabled
+cp $DEST/u-boot-sunxi-next/u-boot-sunxi-with-spl.bin $DEST/output/boot/uboot-next.bin
+mkdir -p $DEST/output/boot/dts
+cp $DEST/linux-sunxi-next/arch/arm/boot/dts/*20-cubie*.dtb $DEST/output/boot/dts/
+cp $SRC/output/linux-sunxi-next/arch/arm/boot/uImage $DEST/output/boot/uImage-next
+
+
+#--------------------------------------------------------------------------------
+# Creating kernel packages: modules + headers + firmware
+#--------------------------------------------------------------------------------
+#
+# Current 
+VER=$(cat $DEST/linux-sunxi/Makefile | grep VERSION | head -1 | awk '{print $(NF)}')
+VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep PATCHLEVEL | head -1 | awk '{print $(NF)}')
+VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep SUBLEVEL | head -1 | awk '{print $(NF)}')
+cd $SRC/output/linux-sunxi/output
+tar cPf $DEST"/output/sunxi_kernel_"$VER"_mod_head_fw.tar" *
+cd $DEST/output/
+tar rPf $DEST"/output/sunxi_kernel_"$VER"_mod_head_fw.tar" boot/*
+# creating MD5 sum
+md5sum sunxi_kernel_"$VER"_mod_head_fw.tar > sunxi_kernel_"$VER"_mod_head_fw.md5
+zip sunxi_kernel_"$VER"_mod_head_fw.zip sunxi_kernel_"$VER"_mod_head_fw.*
+# Next
+VER=$(cat $DEST/linux-sunxi-next/Makefile | grep VERSION | head -1 | awk '{print $(NF)}')
+VER=$VER.$(cat $DEST/linux-sunxi-next/Makefile | grep PATCHLEVEL | head -1 | awk '{print $(NF)}')
+VER=$VER.$(cat $DEST/linux-sunxi-next/Makefile | grep SUBLEVEL | head -1 | awk '{print $(NF)}')
+cd $SRC/output/linux-sunxi-next/output
+tar cPf $DEST"/output/sunxi_kernel_"$VER"_mod_head_fw.tar" *
+cd $DEST/output/
+tar rPf $DEST"/output/sunxi_kernel_"$VER"_mod_head_fw.tar" boot/*
+# creating MD5 sum
+md5sum sunxi_kernel_"$VER"_mod_head_fw.tar > sunxi_kernel_"$VER"_mod_head_fw.md5
+zip sunxi_kernel_"$VER"_mod_head_fw.zip sunxi_kernel_"$VER"_mod_head_fw.*
 
 #--------------------------------------------------------------------------------
 # Creating SD Images
@@ -140,28 +224,31 @@ fi
 echo "------ Creating SD Images"
 cd $DEST/output
 # create 1G image and mount image to next free loop device
-dd if=/dev/zero of=debian_rootfs.raw bs=1M count=1000
+dd if=/dev/zero of=debian_rootfs.raw bs=1M count=1000 status=noxfer
 LOOP=$(losetup -f)
 losetup $LOOP debian_rootfs.raw
 sync
-echo "------ Partitionning and mounting filesystem"
-# make image bootable
-dd if=$DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin of=$LOOP bs=1024 seek=8
-sync
-sleep 3
+
+echo "Partitioning, writing boot loader and mounting file-system."
 # create one partition starting at 2048 which is default
-(echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP >> /dev/null || true
-# just to make sure
-sleep 3
-sync
+parted -s $LOOP -- mklabel msdos
+sleep 1
+parted -s $LOOP -- mkpart primary ext4  2048s -1s
+sleep 1
 partprobe $LOOP
-sleep 3
+sleep 1
+
+echo "Writing boot loader."
+dd if=$DEST/output/boot/uboot.bin of=$LOOP bs=1024 seek=8 status=noxfer
 sync
+sleep 1
 losetup -d $LOOP
+sleep 1
 
 # 2048 (start) x 512 (block size) = where to mount partition
 losetup -o 1048576 $LOOP debian_rootfs.raw
 sleep 4
+
 # create filesystem
 mkfs.ext4 $LOOP
 
@@ -195,7 +282,7 @@ mount -t devpts chpts $DEST/output/sdcard/dev/pts
 
 # update /etc/issue
 cat <<EOT > $DEST/output/sdcard/etc/issue
-Debian GNU/Linux 7 $VERSION
+Debian GNU/Linux $VERSION
 
 EOT
 
@@ -210,9 +297,13 @@ cp $SRC/config/sources.list.$RELEASE $DEST/output/sdcard/etc/apt/sources.list
 # your custom repo
 #EOT
 
-# update
+# update, fix locales
 chroot $DEST/output/sdcard /bin/bash -c "apt-get update"
-chroot $DEST/output/sdcard /bin/bash -c "export LANG=C"    
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install locales makedev"
+sed -i "s/^# $DEST_LANG/$DEST_LANG/" $DEST/output/sdcard/etc/locale.gen
+chroot $DEST/output/sdcard /bin/bash -c "locale-gen $DEST_LANG"
+chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG LANGUAGE=$DEST_LANG DEBIAN_FRONTEND=noninteractive"
+chroot $DEST/output/sdcard /bin/bash -c "update-locale LANG=$DEST_LANG LANGUAGE=$DEST_LANG LC_MESSAGES=POSIX"
 
 # set up 'apt
 cat <<END > $DEST/output/sdcard/etc/apt/apt.conf.d/71-no-recommends
@@ -239,7 +330,9 @@ cd $DEST/output/sdcard/etc/init.d
 cp $SRC/scripts/cubian-resize2fs $DEST/output/sdcard/etc/init.d
 cp $SRC/scripts/cubian-firstrun $DEST/output/sdcard/etc/init.d
 
-# script to install to NAND & SATA
+# script to install to NAND & SATA and kernel switchers
+cp $SRC/scripts/2next.sh $DEST/output/sdcard/root
+cp $SRC/scripts/2current.sh $DEST/output/sdcard/root
 cp $SRC/scripts/nand-install.sh $DEST/output/sdcard/root
 cp $SRC/scripts/sata-install.sh $DEST/output/sdcard/root
 cp $SRC/bin/nand1-cubietruck-debian-boot.tgz $DEST/output/sdcard/root
@@ -254,22 +347,15 @@ chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/brcm40183-patch"
 chroot $DEST/output/sdcard /bin/bash -c "update-rc.d brcm40183-patch defaults" 
 
 # install custom bashrc
-#cp $SRC/scripts/bashrc $DEST/output/sdcard/root/.bashrc
 cat $SRC/scripts/bashrc >> $DEST/output/sdcard/etc/bash.bashrc 
 
 # make it executable
 chroot $DEST/output/sdcard /bin/bash -c "chmod +x /etc/init.d/cubian-*"
 # and startable on boot
 chroot $DEST/output/sdcard /bin/bash -c "update-rc.d cubian-firstrun defaults" 
-# install and configure locales
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install locales"
-# reconfigure locales
-echo -e $DEST_LANG'.UTF-8 UTF-8\n' > $DEST/output/sdcard/etc/locale.gen 
-chroot $DEST/output/sdcard /bin/bash -c "locale-gen"
-echo -e 'LANG="'$DEST_LANG'.UTF-8"\nLANGUAGE="'$DEST_LANG':'$DEST_LANGUAGE'"\n' > $DEST/output/sdcard/etc/default/locale
-chroot $DEST/output/sdcard /bin/bash -c "export LANG=$DEST_LANG.UTF-8"
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install libnl-3-dev bluetooth libbluetooth3 libbluetooth-dev lirc alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof console-data sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntpdate ntp rsync usbutils pciutils wireless-tools wpasupplicant procps parted cpufrequtils console-setup unzip bridge-utils" 
-chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y upgrade"
+echo "Installing aditional applications"
+chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install u-boot-tools makedev libfuse2 libc6 libnl-3-dev bluetooth libbluetooth3 libbluetooth-dev lirc alsa-utils netselect-apt sysfsutils hddtemp bc figlet toilet screen hdparm libfuse2 ntfs-3g bash-completion lsof sudo git hostapd dosfstools htop openssh-server ca-certificates module-init-tools dhcp3-client udev ifupdown iproute iputils-ping ntp rsync usbutils pciutils wireless-tools wpasupplicant procps parted cpufrequtils unzip bridge-utils"
+# removed in 2.4 #chroot $DEST/output/sdcard /bin/bash -c "apt-get -qq -y install console-setup console-data"
 chroot $DEST/output/sdcard /bin/bash -c "apt-get -y clean"
 
 # change dynamic motd
@@ -296,6 +382,10 @@ sed -e 's/# Required-Stop:     umountnfs $time/# Required-Stop:     umountnfs $t
 # console
 chroot $DEST/output/sdcard /bin/bash -c "export TERM=linux" 
 
+# Change Time zone data
+echo $TZDATA > $DEST/output/sdcard/etc/timezone
+chroot $DEST/output/sdcard /bin/bash -c "dpkg-reconfigure -f noninteractive tzdata"
+
 # configure MIN / MAX Speed for cpufrequtils
 sed -e 's/MIN_SPEED="0"/MIN_SPEED="480000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 sed -e 's/MAX_SPEED="0"/MAX_SPEED="1010000"/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
@@ -304,12 +394,14 @@ sed -e 's/ondemand/interactive/g' -i $DEST/output/sdcard/etc/init.d/cpufrequtils
 # eth0 should run on a dedicated processor
 sed -e 's/exit 0//g' -i $DEST/output/sdcard/etc/rc.local
 cat >> $DEST/output/sdcard/etc/rc.local <<"EOF"
-echo 2 > /proc/irq/$(cat /proc/interrupts | grep eth0 | cut -f 1 -d ":" )/smp_affinity
+echo 2 > /proc/irq/$(cat /proc/interrupts | grep eth0 | cut -f 1 -d ":" | tr -d " ")/smp_affinity
 exit 0
 EOF
 
 # set root password
 chroot $DEST/output/sdcard /bin/bash -c "(echo $ROOTPWD;echo $ROOTPWD;) | passwd root" 
+# force password change upon first login 
+chroot $DEST/output/sdcard /bin/bash -c "chage -d 0 root" 
 
 if [ "$RELEASE" = "jessie" ]; then
 # enable root login for latest ssh on jessie
@@ -317,7 +409,7 @@ sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' $DEST/output/sd
 fi
 
 # set hostname 
-echo cubie > $DEST/output/sdcard/etc/hostname
+echo $HOST > $DEST/output/sdcard/etc/hostname
 
 # set hostname in hosts file
 cat > $DEST/output/sdcard/etc/hosts <<EOT
@@ -350,6 +442,11 @@ sunxi_ss
 # if you want access point mode, load wifi module this way: bcmdhd op_mode=2
 # and edit /etc/init.d/hostapd change DAEMON_CONF=/etc/hostapd.conf ; edit your wifi net settings in hostapd.conf ; reboot
 EOT
+# create copy
+cp $DEST/output/sdcard/etc/modules $DEST/output/sdcard/etc/modules.current
+# create for next
+touch $DEST/output/sdcard/etc/modules.next
+
 
 # create interfaces configuration
 cat <<EOT >> $DEST/output/sdcard/etc/network/interfaces
@@ -396,19 +493,14 @@ sed -e 's/#TMP_SIZE=/TMP_SIZE=1G/g' -i $DEST/output/sdcard/etc/default/tmpfs
 # enable serial console (Debian/sysvinit way)
 echo T0:2345:respawn:/sbin/getty -L ttyS0 115200 vt100 >> $DEST/output/sdcard/etc/inittab
 
-# copy kernel, modules, firmware, headers, board config, kernel conf
-cp $DEST/output/uEnv.* $DEST/output/sdcard/boot/
-cp $DEST/output/*.bin $DEST/output/sdcard/boot/
-cp $DEST/linux-sunxi/arch/arm/boot/uImage $DEST/output/sdcard/boot/
-cp -R $DEST/linux-sunxi/output/lib/modules $DEST/output/sdcard/lib/
-cp -R $DEST/linux-sunxi/output/lib/firmware/ $DEST/output/sdcard/lib/
-cp -R $DEST/linux-sunxi/output/include/ $DEST/output/sdcard/usr/
-
-# copy Module.symvers
-cp $DEST/linux-sunxi/Module.symvers $DEST/output/sdcard/usr/include
+# uncompress kernel
+cd $DEST/output/sdcard/
+ls ../*.tar | xargs -i tar xf {}
+rm $DEST/output/*.md5
+rm $DEST/output/*.tar
 
 # remove false links to the kernel source
-# find $DEST/output/sdcard/lib -type l -exec rm -f {} \;
+find $DEST/output/sdcard/lib/modules -type l -exec rm -f {} \;
 
 # USB redirector tools http://www.incentivespro.com
 cd $DEST
@@ -461,17 +553,7 @@ HDMI=$VERSION"_hdmi"
 #####
 
 sleep 5
-# create kernel + modules + headers + firmare
-VER=$(cat $DEST/linux-sunxi/Makefile | grep VERSION | head -1 | awk '{print $(NF)}')
-VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep PATCHLEVEL | head -1 | awk '{print $(NF)}')
-VER=$VER.$(cat $DEST/linux-sunxi/Makefile | grep SUBLEVEL | head -1 | awk '{print $(NF)}')
-cd $DEST/output/sdcard
-tar cvPfz $DEST"/output/"$VERSION"_kernel_"$VER"_mod_head_fw.tgz" -T $SRC/config/file.list
-sleep 5
-# creating MD5 sum
-cd $DEST/output/
-md5sum "$VERSION"_kernel_"$VER"_mod_head_fw.tgz > "$VERSION"_kernel_"$VER"_mod_head_fw.md5
-sleep 2
+
 
 rm $DEST/output/sdcard/usr/bin/qemu-arm-static 
 # umount images 
@@ -480,10 +562,10 @@ losetup -d $LOOP
 
 cp $DEST/output/debian_rootfs.raw $DEST/output/$HDMI.raw
 cd $DEST/output/
-zip $HDMI.zip $HDMI.raw
 # creating MD5 sum
-md5sum $HDMI.zip > $HDMI.md5
-rm $HDMI.raw
+md5sum $HDMI.raw > $HDMI.md5
+zip $HDMI.zip $HDMI.*
+rm $HDMI.raw $HDMI.md5
 
 # let's create VGA version
 LOOP=$(losetup -f)
@@ -495,10 +577,10 @@ umount -l $DEST/output/sdcard/
 losetup -d $LOOP
 mv $DEST/output/debian_rootfs.raw $DEST/output/$VGA.raw
 cd $DEST/output/
-zip $VGA.zip $VGA.raw
-rm $VGA.raw
 # creating MD5 sum
-md5sum $VGA.zip > $VGA.md5
+md5sum $VGA.raw > $VGA.md5
+zip $VGA.zip $VGA.*
+rm $VGA.raw $VGA.md5
 end=`date +%s`
 runtime=$((end-start))
 echo "Runtime $runtime sec."
